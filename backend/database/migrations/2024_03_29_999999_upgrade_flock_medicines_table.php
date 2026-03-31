@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::table('flock_medicines', function (Blueprint $table) {
             $table->renameColumn('date', 'start_date');
-            $table->date('end_date')->nullable()->after('date');
+        });
+        Schema::table('flock_medicines', function (Blueprint $table) {
+            $table->date('end_date')->nullable()->after('start_date');
             $table->string('prescribed_by')->nullable()->after('medicine_name');
             $table->text('notes')->nullable()->after('dosage');
         });
