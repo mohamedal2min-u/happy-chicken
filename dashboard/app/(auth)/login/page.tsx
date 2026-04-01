@@ -45,6 +45,9 @@ export default function LoginPage() {
 
       localStorage.setItem('auth_token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      // وضع كوكيز للحماية السيرفرية
+      document.cookie = `auth_token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`;
 
       if (response.data.farms && response.data.farms.length > 0) {
         localStorage.setItem('current_farm_id', response.data.farms[0].id.toString());
