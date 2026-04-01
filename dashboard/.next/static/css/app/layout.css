@@ -234,12 +234,12 @@
 
 :root {
   /* Dynamic Light Theme (Default) */
-  --primary: #10b981;
-  --secondary: #3b82f6;
-  --accent: #6366f1;
-  --danger: #f43f5e;
+  --primary: #1e6534;
+  --secondary: #ea580c;
+  --accent: #f59e0b;
+  --danger: #ef4444;
   --warning: #f59e0b;
-  --success: #10b981;
+  --success: #1e6534;
   
   --bg-main: #f8fafc;
   --bg-sidebar: #ffffff;
@@ -251,7 +251,7 @@
   --text-inverse: #ffffff;
   
   --border: #e2e8f0;
-  --ring: rgba(16, 185, 129, 0.2);
+  --ring: rgba(30, 101, 52, 0.2);
   
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);

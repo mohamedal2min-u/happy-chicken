@@ -68,7 +68,9 @@ export default function LoginPage() {
       <div className="login-card-container">
         <div className="glass-card login-card animate-scale-up">
           <div className="logo-section">
-            <div className="icon-badge">🐓</div>
+            <div className="icon-badge">
+              <img src="/icon.png" alt="Logo" />
+            </div>
             <h1>دجاجتي</h1>
             <p>مركز الإدارة والعمليات المتكامل</p>
           </div>

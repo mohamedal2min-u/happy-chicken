@@ -20,6 +20,9 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'نظام دجاجتي - إدارة المداجن',
   description: 'نظام دجاجتي لإدارة أفواج دجاج اللحم والمحاسبة المتكاملة',
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({

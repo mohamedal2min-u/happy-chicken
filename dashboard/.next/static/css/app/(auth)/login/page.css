@@ -26,13 +26,13 @@
 }
 
 .login-root::before {
-  background: #10b981;
+  background: var(--primary);
   top: -10%;
   left: -10%;
 }
 
 .login-root::after {
-  background: #3b82f6;
+  background: var(--secondary);
   bottom: -10%;
   right: -10%;
   animation-delay: -5s;
@@ -48,8 +48,8 @@
   inset: 0;
   background: rgba(11, 15, 25, 0.4);
   z-index: 2;
-  -webkit-backdrop-filter: blur(10px);
-          backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
 }
 
 .login-card-container {
@@ -81,26 +81,32 @@
 }
 
 .icon-badge {
-  font-size: 32px;
-  margin-bottom: 15px;
-  display: inline-block;
-  background: #f1f5f9;
-  width: 60px;
-  height: 60px;
+  width: 100px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 20px;
-  margin-left: auto;
-  margin-right: auto;
+  border-radius: 50%;
+  margin: 0 auto 5px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.icon-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .logo-section h1 {
-  font-size: 24px;
-  font-weight: 950;
-  color: #0f172a;
-  margin-bottom: 4px;
-  letter-spacing: -1px;
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--primary);
+  margin-top: -12px;
+  margin-bottom: 0px;
+  letter-spacing: -1.5px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .logo-section p {
@@ -138,11 +144,11 @@
 }
 
 .input-field input:focus {
-  border-color: #10b981;
+  border-color: var(--primary);
   background: #fff;
   outline: none;
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 10px 20px -5px var(--ring);
 }
 
 .auth-options {
@@ -190,12 +196,12 @@
 }
 
 .checkbox-container:hover .checkmark {
-  border-color: #10b981;
+  border-color: var(--primary);
 }
 
 .checkbox-container input:checked ~ .checkmark {
-  background-color: #10b981;
-  border-color: #10b981;
+  background-color: var(--primary);
+  border-color: var(--primary);
 }
 
 .checkmark:after {
@@ -214,7 +220,7 @@
 }
 
 .forgot-link {
-  color: #10b981;
+  color: var(--primary);
   text-decoration: none;
   font-weight: 600;
 }
@@ -222,7 +228,7 @@
 .login-btn {
   width: 100%;
   padding: 16px;
-  background: #10b981;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 12px;
@@ -233,9 +239,9 @@
 }
 
 .login-btn:hover {
-  background: #059669;
+  background: var(--secondary);
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 10px 15px -3px rgba(234, 88, 12, 0.4);
 }
 
 .error-alert {
@@ -278,7 +284,7 @@
 
 .badge-item svg {
   font-size: 20px;
-  color: #10b981;
+  color: var(--primary);
 }
 
 @keyframes scaleUp {
