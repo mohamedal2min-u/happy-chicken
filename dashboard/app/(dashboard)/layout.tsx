@@ -16,6 +16,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setMounted(true);
+    
+    // Auth Guard - منع الدخول غير المصرح به
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -27,7 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (savedUser) setUser(JSON.parse(savedUser));
     if (savedFarms) setFarms(JSON.parse(savedFarms));
     if (savedFarmId) setSelectedFarmId(savedFarmId);
-  }, []);
+  }, [router]);
 
   const handleFarmChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newId = e.target.value;
@@ -62,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
     localStorage.removeItem('farms');
     localStorage.removeItem('current_farm_id');
