@@ -17,21 +17,42 @@ class DashboardController extends Controller
     {
         $farmId = \App\Models\FarmContext::getFarmId();
 
-        // 1. الأفواج الجارية (المفتوحة) - اختيار الحقول الضرورية فقط لتقليل الحمولة
-        $activeFlocks = Flock::where('status', 'open')
-            ->select('id', 'batch_number', 'start_count', 'current_count', 'age_days', 'cost_per_kg', 'created_at')
-            ->get();
+        // 1. الأفواج الجارية (المفتوحة) مع الحسابات اليومية
+        $activeFlocks = Flock::where('status', 'open')->get();
+
+        $activeFlocks = $activeFlocks->map(function ($flock) {
+            // حساب نفوق اليوم لهذا الفوج
+            $flock->today_mortality = (int)$flock->mortalities()
+                ->whereDate('date', now())
+                ->sum('count');
+
+            // حساب مصروف اليوم لهذا الفوج
+            $flock->today_expense = (float)$flock->expenses()
+                ->whereDate('date', now())
+                ->sum('amount');
+
+            // حساب العلف المقدر (أكياس) حسب العمر
+            $age = $flock->age_days;
+            $birdCount = $flock->current_count;
+            // معادلة تقريبية: (العدد * جرام لكل عمر) / 50000 كغ للكيس
+            $gramPerBird = $age < 7 ? 20 : ($age < 14 ? 50 : ($age < 21 ? 90 : ($age < 30 ? 140 : 180)));
+            $flock->estimated_feed_bags = round(($birdCount * $gramPerBird) / 50000, 1);
+
+            return $flock;
+        });
 
         // 2. إجمالي عدد الطيور الحي حالياً
         $totalLiveCount = $activeFlocks->sum('current_count');
 
-        // 3. إجمالي المصاريف (الشهر الحالي)
-        $totalExpenses = Expense::whereYear('date', now()->year)
+        // 3. إجمالي المصاريف (الشهر الحالي) للمزرعة بالكامل
+        $totalExpenses = Expense::where('farm_id', $farmId)
+            ->whereYear('date', now()->year)
             ->whereMonth('date', now()->month)
             ->sum('amount');
 
-        // 4. إجمالي المبيعات (الشهر الحالي)
-        $totalSales = Sale::whereYear('date', now()->year)
+        // 4. إجمالي المبيعات (الشهر الحالي) للمزرعة بالكامل
+        $totalSales = Sale::where('farm_id', $farmId)
+            ->whereYear('date', now()->year)
             ->whereMonth('date', now()->month)
             ->sum('total_amount');
 
