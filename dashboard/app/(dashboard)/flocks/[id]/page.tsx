@@ -20,7 +20,7 @@ export default function FlockDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await api.get(`/flocks/${id}`);
+      const resp = await api.get(`/flocks/${id}?v=${Date.now()}`);
       if (resp.data.success === false) {
           setError(resp.data.error || 'حدث خطأ غير معروف في السيرفر');
       } else {
