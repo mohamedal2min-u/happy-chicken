@@ -169,16 +169,18 @@ class FlockController extends Controller
     public function show(Flock $flock)
     {
         try {
+            // التحقق من هوية الفوج لضمان عدم وجود تداخل بيانات
             $flock->load(['mortalities.creator', 'feedLogs', 'waterLogs', 'expenses.category', 'sales.items', 'medicines']);
             
-            $today = now()->toDateString();
+            $today = \Carbon\Carbon::today()->toDateString();
             $start_date = \Carbon\Carbon::parse($flock->created_at)->startOfDay();
             $BAG_WEIGHT = 50; 
 
-            $mortsByDate = $flock->mortalities->groupBy('date');
-            $feedsByDate = $flock->feedLogs->groupBy('date');
-            $expensesByDate = $flock->expenses->groupBy('date');
-            $salesByDate = $flock->sales->groupBy('date');
+            // تجميع البيانات اليومية
+            $mortsByDate = ($flock->mortalities ?? collect())->groupBy('date');
+            $feedsByDate = ($flock->feedLogs ?? collect())->groupBy('date');
+            $expensesByDate = ($flock->expenses ?? collect())->groupBy('date');
+            $salesByDate = ($flock->sales ?? collect())->groupBy('date');
 
             $total_mortality = $flock->mortalities->sum('count');
             $start_count = $flock->start_count ?: 0;
@@ -187,18 +189,19 @@ class FlockController extends Controller
 
             $cumulative = [
                 'total_mortality' => (int)$total_mortality,
-                'total_feed_kg' => (float)$flock->feedLogs->sum('quantity'),
-                'total_water' => (float)$flock->waterLogs->sum('quantity'),
-                'total_expenses' => (float)$flock->expenses->sum('amount'),
-                'total_sales' => (float)$flock->sales->sum('total_amount'),
-                'total_medicine_types' => $flock->medicines->unique('medicine_name')->count(),
+                'total_feed_kg' => (float)($flock->feedLogs->sum('quantity') ?? 0),
+                'total_water' => (float)($flock->waterLogs->sum('quantity') ?? 0),
+                'total_expenses' => (float)($flock->expenses->sum('amount') ?? 0),
+                'total_sales' => (float)($flock->sales->sum('total_amount') ?? 0),
+                'total_medicine_types' => ($flock->medicines ?? collect())->unique('medicine_name')->count(),
             ];
             $cumulative['total_feed_bags'] = round($cumulative['total_feed_kg'] / $BAG_WEIGHT, 1);
             $cumulative['net_profit'] = $cumulative['total_sales'] - $cumulative['total_expenses'];
 
             $daily_movements = [];
             $running_count = $start_count;
-            $active_days = max(1, (int)$flock->age_days);
+            $age_days = (int)($flock->age_days ?? 0);
+            $active_days = max(1, $age_days);
             $total_est_feed_kg = 0;
             
             for ($i = 0; $i < $active_days; $i++) {
@@ -217,20 +220,19 @@ class FlockController extends Controller
                 $daySales = $salesByDate->get($current_date, collect());
 
                 $d_mortality = $dayMorts->sum('count');
-                $d_sales_count = $daySales->sum(fn($s) => $s->items->sum('count'));
+                $d_sales_count = $daySales->sum(fn($s) => ($s->items ?? collect())->sum('count'));
                 $d_feed_kg = $dayFeeds->sum('quantity');
                 $d_expense_amount = $dayExpenses->sum('amount');
                 
                 $d_expense_summary = $dayExpenses->map(function($ex){ 
                     return $ex->description ?: ($ex->category ? $ex->category->name : 'مصروف'); 
-                })->unique()->implode('، ');
+                })->unique()->filter()->implode('، ');
 
-                $active_meds = $flock->medicines->filter(function($m) use ($current_date) {
+                $active_meds = ($flock->medicines ?? collect())->filter(function($m) use ($current_date) {
                     return $m->start_date <= $current_date && (!$m->end_date || $m->end_date >= $current_date);
                 });
 
-                $start_of_day = $running_count;
-                $end_of_day = max(0, $start_of_day - $d_mortality - $d_sales_count);
+                $end_of_day = max(0, $running_count - $d_mortality - $d_sales_count);
                 $first_log = $dayMorts->first();
 
                 $daily_movements[] = [
@@ -256,7 +258,7 @@ class FlockController extends Controller
             }
 
             $cumulative['total_estimated_feed_bags'] = round($total_est_feed_kg / $BAG_WEIGHT, 1);
-            $last_mort = $flock->mortalities->last();
+            $last_mort = ($flock->mortalities ?? collect())->last();
 
             return response()->json([
                 'success' => true,
@@ -270,7 +272,7 @@ class FlockController extends Controller
                     'mortality' => $mortsByDate->get($today, collect())->sum('count'),
                     'feed_bags' => round($feedsByDate->get($today, collect())->sum('quantity') / $BAG_WEIGHT, 1),
                     'expense' => $expensesByDate->get($today, collect())->sum('amount'),
-                    'sales_birds' => $salesByDate->get($today, collect())->sum(fn($s) => $s->items->sum('count')),
+                    'sales_birds' => $salesByDate->get($today, collect())->sum(fn($s) => ($s->items ?? collect())->sum('count')),
                 ],
                 'cumulative' => $cumulative,
                 'daily_movements' => array_reverse($daily_movements),
@@ -279,11 +281,12 @@ class FlockController extends Controller
                     'time' => $flock->updated_at ? $flock->updated_at->format('Y-m-d H:i') : '---',
                 ]
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Error processing flock data: ' . $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => 'Server Error: ' . $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ], 500);
         }
     }
