@@ -11,6 +11,7 @@ export default function FlocksPage() {
   const [newFlock, setNewFlock] = useState({
     batch_number: '',
     start_count: '',
+    chick_price: '',
     notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
@@ -40,11 +41,12 @@ export default function FlocksPage() {
       await api.post('/flocks', {
         batch_number: newFlock.batch_number,
         start_count: parseInt(newFlock.start_count),
+        chick_price: parseFloat(newFlock.chick_price),
         notes: newFlock.notes
       });
       
       setShowModal(false);
-      setNewFlock({ batch_number: '', start_count: '', notes: '' });
+      setNewFlock({ batch_number: '', start_count: '', chick_price: '', notes: '' });
       fetchFlocks();
     } catch (err: any) {
       setError(err.response?.data?.message || 'حدث خطأ أثناء إنشاء الفوج. يرجى مراجعة البيانات.');
@@ -77,24 +79,37 @@ export default function FlocksPage() {
             <form onSubmit={handleCreateFlock} className="flock-form">
               {error && <div className="error-box">{error}</div>}
               
-              <div className="form-group">
-                <label>رقم الفوج (Batch Number)</label>
-                <input 
-                  type="text" 
-                  value={newFlock.batch_number}
-                  onChange={(e) => setNewFlock({...newFlock, batch_number: e.target.value})}
-                  placeholder="مثال: F-2024-002"
-                  required
-                />
+              <div className="form-group-row">
+                <div className="form-group">
+                  <label>رقم الفوج (Batch ID)</label>
+                  <input 
+                    type="text" 
+                    value={newFlock.batch_number}
+                    onChange={(e) => setNewFlock({...newFlock, batch_number: e.target.value})}
+                    placeholder="مثال: F-2024-002"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>العدد الابتدائي</label>
+                  <input 
+                    type="number" 
+                    value={newFlock.start_count}
+                    onChange={(e) => setNewFlock({...newFlock, start_count: e.target.value})}
+                    placeholder="مثال: 5000"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="form-group">
-                <label>العدد الابتدائي لليوم الأول</label>
+                <label>سعر الصوص (للرأس الواحد بالليرة)</label>
                 <input 
                   type="number" 
-                  value={newFlock.start_count}
-                  onChange={(e) => setNewFlock({...newFlock, start_count: e.target.value})}
-                  placeholder="مثال: 5000"
+                  step="0.01"
+                  value={newFlock.chick_price}
+                  onChange={(e) => setNewFlock({...newFlock, chick_price: e.target.value})}
+                  placeholder="مثال: 0.85"
                   required
                 />
               </div>
@@ -104,7 +119,7 @@ export default function FlocksPage() {
                 <textarea 
                   value={newFlock.notes}
                   onChange={(e) => setNewFlock({...newFlock, notes: e.target.value})}
-                  placeholder="نوع الصوص، الشركة الموردة، إلخ..."
+                  placeholder="نوع السلالة، الشركة الموردة..."
                   rows={3}
                 />
               </div>

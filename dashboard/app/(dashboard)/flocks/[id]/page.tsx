@@ -69,7 +69,13 @@ export default function FlockDetailPage() {
      </div>
   );
 
-  const { flock, today, cumulative, kpis, daily_movements, last_update } = data;
+  const flock = data?.flock || {};
+  const today = data?.today || { mortality: 0, feed_bags: 0, expense: 0, sales_birds: 0 };
+  const cumulative = data?.cumulative || { total_mortality: 0, total_feed_bags: 0, total_expenses: 0, net_profit: 0 };
+  const kpis = data?.kpis || { mortality_rate: 0 };
+  const daily_movements = data?.daily_movements || [];
+  const last_update = data?.last_update || { time: '---', user: 'مدير النظام' };
+
   const isTooYoung = (flock?.age_days || 0) < 35;
 
   return (
@@ -82,7 +88,7 @@ export default function FlockDetailPage() {
              <div className="ch-left-brand">
                 <div className="batch-tag-glass">
                    <span className="pulse-dot"></span>
-                   <span className="number-font">BATCH No. {flock.batch_number}</span>
+                   <span className="number-font">BATCH No. {flock.batch_number || id}</span>
                 </div>
                 <h1>سجل المتابعة والتدقيق</h1>
                 <p className="breed-info">نظام التحليل المتطور لسلالة {flock.breed || 'اللاحم الممتاز'}</p>
@@ -111,15 +117,15 @@ export default function FlockDetailPage() {
           <div className="header-stats-grid">
              <div className="hs-card">
                 <label>تاريخ التأسيس</label>
-                <div className="v number-font">{flock.created_at?.split('T')[0]}</div>
+                <div className="v number-font">{flock.created_at?.split('T')[0] || '---'}</div>
              </div>
              <div className="hs-card">
                 <label>عصر الفوج الحقيقي</label>
-                <div className="v number-font">{flock.age_days} يوم</div>
+                <div className="v number-font">{flock.age_days || 0} يوم</div>
              </div>
              <div className="hs-card active-stat">
                 <label>إحصاء الكائنات الحية</label>
-                <div className="v number-font">{(flock.start_count - (cumulative.total_mortality || 0))?.toLocaleString()}</div>
+                <div className="v number-font">{( (flock.start_count || 0) - (cumulative.total_mortality || 0))?.toLocaleString()}</div>
              </div>
              <div className="hs-card">
                 <label>بيانات المزامنة</label>

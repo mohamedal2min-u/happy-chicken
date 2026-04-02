@@ -41,6 +41,7 @@ class FlockController extends Controller
         $request->validate([
             'batch_number' => 'required|string|unique:flocks',
             'start_count' => 'required|integer|min:0',
+            'chick_price' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
         ]);
 
@@ -50,7 +51,7 @@ class FlockController extends Controller
             'current_count' => $request->start_count,
             'status' => 'open',
             'created_by' => Auth::id(),
-            'notes' => $request->notes,
+            'notes' => "سعر الصوص: {$request->chick_price} ل.س | " . ($request->notes ?? ''),
         ]);
 
         return response()->json($flock, 201);
