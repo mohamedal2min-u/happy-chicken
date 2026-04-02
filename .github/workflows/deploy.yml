@@ -16,18 +16,19 @@ jobs:
           username: ${{ secrets.VPS_USERNAME_BACKEND }}
           password: ${{ secrets.VPS_PASSWORD_BACKEND }}
           script: |
-            # الذهاب لمسار الباك إند
-            cd /home/alamin-api/htdocs/api.alamin.se
+            # المسار الذي زودتني به
+            cd /home/alamin-api/htdocs/api.alamin.se/public
             
             echo "Pulling latest backend changes..."
-            git pull origin main || true
+            git pull origin main || git pull origin master
             
-            cd backend
+            # الدخول لمجلد backend إذا كان موجوداً
+            if [ -d "backend" ]; then cd backend; fi
+            
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
-            php artisan view:cache
 
   deploy-dashboard:
     name: Deploy Dashboard (Next.js)
@@ -40,15 +41,17 @@ jobs:
           username: ${{ secrets.VPS_USERNAME_FRONTEND }}
           password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
           script: |
-            # الذهاب لمسار الواجهة
+            # المسار الذي زودتني به للواجهة
             cd /home/maa/htdocs/ch.alamin.se
             
             echo "Pulling latest dashboard changes..."
-            git pull origin main || true
+            git pull origin main || git pull origin master
             
-            cd dashboard
+            # الدخول لمجلد dashboard إذا كان موجوداً
+            if [ -d "dashboard" ]; then cd dashboard; fi
+            
             npm install
             npm run build
             
-            # إعادة تشغيل التطبيق لو كنت تستخدم pm2 (أو أي أوامر مخصصة)
-            pm2 restart all || true
+            # إعادة تشغيل التطبيق (pm2)
+            pm2 restart all || pm2 start npm --name "dashboard" -- start
