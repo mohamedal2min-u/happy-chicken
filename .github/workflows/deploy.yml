@@ -16,13 +16,13 @@ jobs:
           username: ${{ secrets.VPS_USERNAME_BACKEND }}
           password: ${{ secrets.VPS_PASSWORD_BACKEND }}
           script: |
-            # المسار الذي زودتني به
-            cd /home/alamin-api/htdocs/api.alamin.se/public
+            # المسار الرئيسي للمشروع (المجلد الأب لـ public)
+            cd /home/alamin-api/htdocs/api.alamin.se
             
             echo "Pulling latest backend changes..."
             git pull origin main || git pull origin master
             
-            # الدخول لمجلد backend إذا كان موجوداً
+            # الدخول لمجلد backend إذا كان المشروع منظماً بداخله
             if [ -d "backend" ]; then cd backend; fi
             
             composer install --no-interaction --prefer-dist --optimize-autoloader
