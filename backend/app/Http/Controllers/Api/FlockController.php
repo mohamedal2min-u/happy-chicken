@@ -168,112 +168,124 @@ class FlockController extends Controller
      */
     public function show(Flock $flock)
     {
-        $flock->load(['mortalities.creator', 'feedLogs', 'waterLogs', 'expenses.category', 'sales.items', 'medicines']);
-        
-        $today = now()->toDateString();
-        $start_date = \Carbon\Carbon::parse($flock->created_at)->startOfDay();
-        $BAG_WEIGHT = 50; 
-
-        $mortsByDate = $flock->mortalities->groupBy('date');
-        $feedsByDate = $flock->feedLogs->groupBy('date');
-        $expensesByDate = $flock->expenses->groupBy('date');
-        $salesByDate = $flock->sales->groupBy('date');
-
-        $total_mortality = $flock->mortalities->sum('count');
-        $mortality_rate = $flock->start_count > 0 ? round(($total_mortality / $flock->start_count) * 100, 2) : 0;
-        $survival_rate = max(0, 100 - $mortality_rate);
-
-        $cumulative = [
-            'total_mortality' => $total_mortality,
-            'total_feed_kg' => $flock->feedLogs->sum('quantity'),
-            'total_water' => $flock->waterLogs->sum('quantity'),
-            'total_expenses' => $flock->expenses->sum('amount'),
-            'total_sales' => $flock->sales->sum('total_amount'),
-            'total_medicine_types' => $flock->medicines->unique('medicine_name')->count(),
-        ];
-        $cumulative['total_feed_bags'] = round($cumulative['total_feed_kg'] / $BAG_WEIGHT, 1);
-        $cumulative['net_profit'] = $cumulative['total_sales'] - $cumulative['total_expenses'];
-
-        $daily_movements = [];
-        $running_count = $flock->start_count;
-        $active_days = max(1, $flock->age_days);
-        $total_est_feed_kg = 0;
-        
-        for ($i = 0; $i < $active_days; $i++) {
-            $age = $i + 1;
-            $current_date = (clone $start_date)->addDays($i)->toDateString();
+        try {
+            $flock->load(['mortalities.creator', 'feedLogs', 'waterLogs', 'expenses.category', 'sales.items', 'medicines']);
             
-            $est_feed_per_bird = 13 + ($age * 5.2); 
-            $d_estimated_feed_kg = ($est_feed_per_bird * $running_count) / 1000;
-            $total_est_feed_kg += $d_estimated_feed_kg;
+            $today = now()->toDateString();
+            $start_date = \Carbon\Carbon::parse($flock->created_at)->startOfDay();
+            $BAG_WEIGHT = 50; 
 
-            $d_estimated_blackout = ($age <= 2) ? 1 : (($age >= 30) ? 2 : 6);
+            $mortsByDate = $flock->mortalities->groupBy('date');
+            $feedsByDate = $flock->feedLogs->groupBy('date');
+            $expensesByDate = $flock->expenses->groupBy('date');
+            $salesByDate = $flock->sales->groupBy('date');
 
-            $dayMorts = $mortsByDate->get($current_date, collect());
-            $dayFeeds = $feedsByDate->get($current_date, collect());
-            $dayExpenses = $expensesByDate->get($current_date, collect());
-            $daySales = $salesByDate->get($current_date, collect());
+            $total_mortality = $flock->mortalities->sum('count');
+            $start_count = $flock->start_count ?: 0;
+            $mortality_rate = $start_count > 0 ? round(($total_mortality / $start_count) * 100, 2) : 0;
+            $survival_rate = max(0, 100 - $mortality_rate);
 
-            $d_mortality = $dayMorts->sum('count');
-            $d_sales_count = $daySales->sum(fn($s) => $s->items->sum('count'));
-            $d_feed_kg = $dayFeeds->sum('quantity');
-            $d_expense_amount = $dayExpenses->sum('amount');
-            
-            $d_expense_summary = $dayExpenses->map(function($ex){ 
-                return $ex->notes ?: ($ex->category ? $ex->category->name : 'مصروف'); 
-            })->unique()->implode('، ');
-
-            $active_meds = $flock->medicines->filter(function($m) use ($current_date) {
-                return $m->start_date <= $current_date && (!$m->end_date || $m->end_date >= $current_date);
-            });
-
-            $start_of_day = $running_count;
-            $end_of_day = max(0, $start_of_day - $d_mortality - $d_sales_count);
-            $first_log = $dayMorts->first();
-
-            $daily_movements[] = [
-                'day' => $age,
-                'date' => $current_date,
-                'mortality' => $d_mortality,
-                'actual_feed_bags' => round($d_feed_kg / $BAG_WEIGHT, 2),
-                'estimated_feed_bags' => round($d_estimated_feed_kg / $BAG_WEIGHT, 2),
-                'estimated_blackout' => $d_estimated_blackout,
-                'expense_amount' => $d_expense_amount,
-                'expense_summary' => $d_expense_summary ?: 'لا يوجد',
-                'medicine_count' => $active_meds->count(),
-                'medicine_list' => $active_meds->map(fn($m) => [
-                    'name' => $m->medicine_name,
-                    'dr' => $m->prescribed_by
-                ]),
-                'updated_by' => $first_log?->creator?->name ?? '---',
-                'updated_at' => $first_log?->updated_at ? $first_log->updated_at->format('H:i') : '---',
-                'notes' => $first_log?->reason ?? '',
+            $cumulative = [
+                'total_mortality' => (int)$total_mortality,
+                'total_feed_kg' => (float)$flock->feedLogs->sum('quantity'),
+                'total_water' => (float)$flock->waterLogs->sum('quantity'),
+                'total_expenses' => (float)$flock->expenses->sum('amount'),
+                'total_sales' => (float)$flock->sales->sum('total_amount'),
+                'total_medicine_types' => $flock->medicines->unique('medicine_name')->count(),
             ];
+            $cumulative['total_feed_bags'] = round($cumulative['total_feed_kg'] / $BAG_WEIGHT, 1);
+            $cumulative['net_profit'] = $cumulative['total_sales'] - $cumulative['total_expenses'];
+
+            $daily_movements = [];
+            $running_count = $start_count;
+            $active_days = max(1, (int)$flock->age_days);
+            $total_est_feed_kg = 0;
             
-            $running_count = $end_of_day;
+            for ($i = 0; $i < $active_days; $i++) {
+                $age = $i + 1;
+                $current_date = (clone $start_date)->addDays($i)->toDateString();
+                
+                $est_feed_per_bird = 13 + ($age * 5.2); 
+                $d_estimated_feed_kg = ($est_feed_per_bird * $running_count) / 1000;
+                $total_est_feed_kg += $d_estimated_feed_kg;
+
+                $d_estimated_blackout = ($age <= 2) ? 1 : (($age >= 30) ? 2 : 6);
+
+                $dayMorts = $mortsByDate->get($current_date, collect());
+                $dayFeeds = $feedsByDate->get($current_date, collect());
+                $dayExpenses = $expensesByDate->get($current_date, collect());
+                $daySales = $salesByDate->get($current_date, collect());
+
+                $d_mortality = $dayMorts->sum('count');
+                $d_sales_count = $daySales->sum(fn($s) => $s->items->sum('count'));
+                $d_feed_kg = $dayFeeds->sum('quantity');
+                $d_expense_amount = $dayExpenses->sum('amount');
+                
+                $d_expense_summary = $dayExpenses->map(function($ex){ 
+                    return $ex->description ?: ($ex->category ? $ex->category->name : 'مصروف'); 
+                })->unique()->implode('، ');
+
+                $active_meds = $flock->medicines->filter(function($m) use ($current_date) {
+                    return $m->start_date <= $current_date && (!$m->end_date || $m->end_date >= $current_date);
+                });
+
+                $start_of_day = $running_count;
+                $end_of_day = max(0, $start_of_day - $d_mortality - $d_sales_count);
+                $first_log = $dayMorts->first();
+
+                $daily_movements[] = [
+                    'day' => $age,
+                    'date' => $current_date,
+                    'mortality' => (int)$d_mortality,
+                    'actual_feed_bags' => round($d_feed_kg / $BAG_WEIGHT, 2),
+                    'estimated_feed_bags' => round($d_estimated_feed_kg / $BAG_WEIGHT, 2),
+                    'estimated_blackout' => (int)$d_estimated_blackout,
+                    'expense_amount' => (float)$d_expense_amount,
+                    'expense_summary' => $d_expense_summary ?: 'لا يوجد',
+                    'medicine_count' => $active_meds->count(),
+                    'medicine_list' => $active_meds->map(fn($m) => [
+                        'name' => $m->medicine_name,
+                        'dr' => $m->prescribed_by
+                    ]),
+                    'updated_by' => $first_log?->creator?->name ?? '---',
+                    'updated_at' => $first_log?->updated_at ? $first_log->updated_at->format('H:i') : '---',
+                    'notes' => $first_log?->reason ?? '',
+                ];
+                
+                $running_count = $end_of_day;
+            }
+
+            $cumulative['total_estimated_feed_bags'] = round($total_est_feed_kg / $BAG_WEIGHT, 1);
+            $last_mort = $flock->mortalities->last();
+
+            return response()->json([
+                'success' => true,
+                'flock' => $flock,
+                'kpis' => [
+                    'mortality_rate' => $mortality_rate,
+                    'survival_rate' => $survival_rate,
+                ],
+                'today' => [
+                    'date' => $today,
+                    'mortality' => $mortsByDate->get($today, collect())->sum('count'),
+                    'feed_bags' => round($feedsByDate->get($today, collect())->sum('quantity') / $BAG_WEIGHT, 1),
+                    'expense' => $expensesByDate->get($today, collect())->sum('amount'),
+                    'sales_birds' => $salesByDate->get($today, collect())->sum(fn($s) => $s->items->sum('count')),
+                ],
+                'cumulative' => $cumulative,
+                'daily_movements' => array_reverse($daily_movements),
+                'last_update' => [
+                    'user' => $last_mort?->creator?->name ?? 'مدير النظام',
+                    'time' => $flock->updated_at ? $flock->updated_at->format('Y-m-d H:i') : '---',
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Error processing flock data: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        $cumulative['total_estimated_feed_bags'] = round($total_est_feed_kg / $BAG_WEIGHT, 1);
-        $last_mort = $flock->mortalities->last();
-
-        return response()->json([
-            'flock' => $flock,
-            'kpis' => [
-                'mortality_rate' => $mortality_rate,
-                'survival_rate' => $survival_rate,
-            ],
-            'today' => [
-                'mortality' => $mortsByDate->get($today, collect())->sum('count'),
-                'feed_bags' => round($feedsByDate->get($today, collect())->sum('quantity') / $BAG_WEIGHT, 1),
-                'expense' => $expensesByDate->get($today, collect())->sum('amount'),
-            ],
-            'cumulative' => $cumulative,
-            'daily_movements' => array_reverse($daily_movements),
-            'last_update' => [
-                'user' => $last_mort?->creator?->name ?? 'مدير النظام',
-                'time' => $flock->updated_at ? $flock->updated_at->format('Y-m-d H:i') : '---',
-            ]
-        ]);
     }
 
     /**
