@@ -10,17 +10,26 @@ export default function FlockDetailPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [closing, setClosing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
      fetchFlockData();
   }, [id]);
 
   const fetchFlockData = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const resp = await api.get(`/flocks/${id}`);
-      setData(resp.data);
-    } catch (err) {
+      if (resp.data.success === false) {
+          setError(resp.data.error || 'حدث خطأ غير معروف في السيرفر');
+      } else {
+          setData(resp.data);
+      }
+    } catch (err: any) {
       console.error(err);
+      const msg = err.response?.data?.error || err.response?.data?.message || 'تعذر الاتصال بالسيرفر أو حدث خطأ داخلي (500)';
+      setError(msg);
     } finally {
       setLoading(false);
     }
