@@ -9,6 +9,9 @@ jobs:
     name: Deploy Backend (Laravel)
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Deploy Backend via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -16,15 +19,21 @@ jobs:
           username: ${{ secrets.VPS_USERNAME_BACKEND }}
           password: ${{ secrets.VPS_PASSWORD_BACKEND }}
           script: |
-            # المسار الرئيسي للمشروع (المجلد الأب لـ public)
+            # المسار الرئيسي للمشروع
+            mkdir -p /home/alamin-api/htdocs/api.alamin.se
             cd /home/alamin-api/htdocs/api.alamin.se
             
-            echo "Pulling latest backend changes..."
-            git pull origin main || git pull origin master
+            # إذا لم يكن المشروع مربوطاً بـ Git، سنحاول ربطه أو سحب الكود
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/mohamedal2min-u/happy-chicken.git .
+            else
+              git pull origin main || git pull origin master
+            fi
             
             # الدخول لمجلد backend إذا كان المشروع منظماً بداخله
             if [ -d "backend" ]; then cd backend; fi
             
+            # تفعيل المحمل الذاتي وتحديث قاعدة البيانات
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache
@@ -34,24 +43,38 @@ jobs:
     name: Deploy Dashboard (Next.js)
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Dashboard via SSH
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Dashboard
+        run: |
+          cd dashboard
+          npm install
+          npm run build
+
+      - name: Upload Dashboard to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME_FRONTEND }}
+          password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
+          source: "dashboard/.next,dashboard/public,dashboard/package.json,dashboard/next.config.mjs"
+          target: "/home/maa/htdocs/ch.alamin.se"
+          strip_components: 1
+
+      - name: Restart Application via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME_FRONTEND }}
           password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
           script: |
-            # المسار الذي زودتني به للواجهة
             cd /home/maa/htdocs/ch.alamin.se
-            
-            echo "Pulling latest dashboard changes..."
-            git pull origin main || git pull origin master
-            
-            # الدخول لمجلد dashboard إذا كان موجوداً
-            if [ -d "dashboard" ]; then cd dashboard; fi
-            
-            npm install
-            npm run build
-            
-            # إعادة تشغيل التطبيق (pm2)
+            # محاولة العثور على pm2 في المسارات الشائعة أو إعادة التشغيل
+            export PATH=$PATH:/home/maa/.nvm/versions/node/$(node -v)/bin
             pm2 restart all || pm2 start npm --name "dashboard" -- start
