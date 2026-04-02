@@ -319,7 +319,12 @@ function FarmDashboard() {
   };
 
   const currentFlock = useMemo(() => data?.flocks?.[0], [data]);
-  const mortalityRate = useMemo(() => currentFlock ? ((currentFlock.total_mortality / currentFlock.start_count) * 100).toFixed(1) : '0', [currentFlock]);
+  const mortalityRate = useMemo(() => {
+    if (!currentFlock || !currentFlock.start_count || currentFlock.start_count <= 0) return '0.0';
+    const dead = currentFlock.start_count - (currentFlock.current_count || 0);
+    const rate = (dead / currentFlock.start_count) * 100;
+    return rate.toFixed(1);
+  }, [currentFlock]);
 
   const getSuggestedTemp = (age: number) => {
     if (age <= 3) return 33; if (age <= 7) return 30;
