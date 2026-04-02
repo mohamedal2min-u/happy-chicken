@@ -5,46 +5,50 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
-  deploy:
+  deploy-backend:
+    name: Deploy Backend (Laravel)
     runs-on: ubuntu-latest
     steps:
-      - name: Execute deployment commands via SSH
+      - name: Deploy Backend via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
+          username: ${{ secrets.VPS_USERNAME_BACKEND }}
+          password: ${{ secrets.VPS_PASSWORD_BACKEND }}
           script: |
-            # =========================================================
-            # هام جداً: قم بتغيير /var/www/MAA إلى مسار المشروع على السيرفر
-            # =========================================================
-            cd /var/www/MAA
+            # الذهاب لمسار الباك إند
+            cd /home/alamin-api/htdocs/api.alamin.se
             
-            echo "Pulling latest changes from GitHub..."
-            # تأكد أن اسم الفرع هو main، إذا كان master قم بتغييرها
-            git pull origin main
+            echo "Pulling latest backend changes..."
+            git pull origin main || true
             
-            # =========================================================
-            # 1. تحديث الخلفية (Backend - Laravel)
-            # =========================================================
-            echo "Deploying Backend..."
             cd backend
             composer install --no-interaction --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
+
+  deploy-dashboard:
+    name: Deploy Dashboard (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Dashboard via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME_FRONTEND }}
+          password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
+          script: |
+            # الذهاب لمسار الواجهة
+            cd /home/maa/htdocs/ch.alamin.se
             
-            # =========================================================
-            # 2. تحديث الواجهة (Dashboard - Next.js)
-            # =========================================================
-            echo "Deploying Dashboard..."
-            cd ../dashboard
+            echo "Pulling latest dashboard changes..."
+            git pull origin main || true
+            
+            cd dashboard
             npm install
             npm run build
             
-            # نفترض أنك تستخدم pm2 لتشغيل الـ dashboard على السيرفر
-            # إذا كان اسم التطبيق في pm2 مختلف، قم بتغيير 'all'
+            # إعادة تشغيل التطبيق لو كنت تستخدم pm2 (أو أي أوامر مخصصة)
             pm2 restart all || true
-            
-            echo "Deployment Completed Successfully!"
