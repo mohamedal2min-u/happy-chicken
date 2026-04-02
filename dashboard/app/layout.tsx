@@ -28,9 +28,16 @@ export default function RootLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     const isAuthPage = pathname.startsWith('/login');
 
     if (!token && !isAuthPage) {
@@ -40,9 +47,10 @@ export default function RootLayout({
     } else {
       setLoading(false);
     }
-  }, [pathname, router]);
+  }, [pathname, router, mounted]);
 
-  if (loading && !pathname.startsWith('/login')) {
+  // شاشة التحميل الأولية فقط إذا لم نكن في صفحة تسجيل الدخول
+  if (mounted && loading && !pathname.startsWith('/login')) {
     return (
       <html lang="ar" dir="rtl">
         <body className={`${tajawal.variable} ${outfit.variable}`}>
@@ -58,7 +66,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl">
       <body className={`${tajawal.variable} ${outfit.variable}`}>
         <StyledJsxRegistry>
-          <main>{children}</main>
+          <main>{mounted ? children : null}</main>
         </StyledJsxRegistry>
       </body>
     </html>
