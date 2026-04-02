@@ -12,7 +12,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // تفعيل التثبيت لتجنب مشاكل الهيدرة (تم نقله للـ Layout)
+  const router = useRouter();
+
   useEffect(() => {
     const savedEmail = localStorage.getItem('saved_email');
     if (savedEmail) {
@@ -22,6 +23,41 @@ export default function LoginPage() {
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await api.post('/login', {
+        email,
+        password,
+        device_name: 'nextjs_dashboard',
+      });
+
+      if (rememberMe) {
+        localStorage.setItem('saved_email', email);
+      } else {
+        localStorage.removeItem('saved_email');
+      }
+
+      localStorage.setItem('auth_token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      // وضع كوكيز للحماية السيرفرية
+      document.cookie = `auth_token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`;
+
+      if (response.data.farms && response.data.farms.length > 0) {
+        localStorage.setItem('current_farm_id', response.data.farms[0].id.toString());
+        localStorage.setItem('farms', JSON.stringify(response.data.farms));
+      }
+
+      router.push('/');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'خطأ في تسجيل الدخول. يرجى التحقق من بياناتك.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="login-root">
