@@ -10,11 +10,11 @@
 
 /* Action Grid */
 .action-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); grid-gap: 15px; gap: 15px; }
-.act-btn { 
-   height: 120px; border: none; border-radius: 20px; display: flex; flex-direction: column; 
-   align-items: center; justify-content: center; gap: 10px; cursor: pointer; color: white;
-   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-   position: relative; overflow: hidden;
+@media (max-width: 768px) {
+  .action-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .act-btn { height: 100px; border-radius: 16px; }
+  .act-btn .icon { font-size: 32px; }
+  .act-btn .lbl { font-size: 13px; }
 }
 .act-btn::after {
   content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.1));
@@ -76,6 +76,13 @@
 .modal-window { 
   width: 95%; max-width: 650px; background: white; border-radius: 40px; padding: 50px; 
   box-shadow: 0 30px 60px -12px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.8);
+  max-height: 90vh; overflow-y: auto;
+}
+@media (max-width: 600px) {
+  .modal-window { padding: 25px; border-radius: 24px; }
+  .modal-head h2 { font-size: 20px; }
+  .modal-form label { font-size: 14px; }
+  .modal-form input, .modal-form select, .modal-form textarea { padding: 15px; font-size: 15px; }
 }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 25px; }
 .modal-head h2 { font-size: 26px; font-weight: 950; color: #0f172a; margin: 0; }
@@ -458,6 +465,12 @@
   .pfc-main-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .pfc-stat.highlight-green { transform: none; grid-column: span 2; }
   .pfc-header { flex-direction: column; gap: 20px; align-items: flex-start; }
+}
+@media (max-width: 600px) {
+  .pfc-main-grid { grid-template-columns: 1fr; }
+  .pfc-stat.highlight-green { grid-column: span 1; }
+  .premium-flock-card { padding: 20px; border-radius: 24px; }
+  .pfc-stat .val { font-size: 24px; }
 }
 
 /* ── Empty Flock Welcome ── */

@@ -112,15 +112,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Bottom Nav (Mobile) */}
       <nav className="mobile-nav">
-        {navItems.slice(0, 5).map((item) => (
+        {navItems.map((item) => (
           <Link key={item.path} href={item.path} className={`m-link ${pathname === item.path ? 'active' : ''}`}>
              <span className="icon">{item.icon}</span>
              <span>{item.name}</span>
           </Link>
         ))}
         {/* Toggle Theme Mobile */}
-        <button onClick={toggleTheme} style={{ background: 'none', border: 'none', fontSize: '20px' }}>
-           {theme === 'light' ? '🌙' : '☀️'}
+        <button onClick={toggleTheme} className="m-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+           <span className="icon">{theme === 'light' ? '🌙' : '☀️'}</span>
+           <span>المظهر</span>
         </button>
       </nav>
     </div>
