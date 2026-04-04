@@ -89,6 +89,11 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
           script: |
             cd /home/maa/htdocs/ch.alamin.se
-            # محاولة العثور على pm2 في المسارات الشائعة أو إعادة التشغيل
+            # التأكد من المسارات والمكتبات
             export PATH=$PATH:/home/maa/.nvm/versions/node/$(node -v)/bin
-            pm2 restart all || pm2 start npm --name "dashboard" -- start
+            npm install --production
+            
+            # إعادة التشغيل باستخدام PM2 بشكل نظيف
+            pm2 delete dashboard || true
+            pm2 start npm --name "dashboard" -- start -- -p 3000
+            pm2 save
