@@ -23,15 +23,23 @@ jobs:
             mkdir -p /home/alamin-api/htdocs/api.alamin.se
             cd /home/alamin-api/htdocs/api.alamin.se
             
+            # حل مشكلة الملكية في Git
+            git config --global --add safe.directory /home/alamin-api/htdocs/api.alamin.se
+            
             # إذا لم يكن المشروع مربوطاً بـ Git، سنحاول ربطه أو سحب الكود
             if [ ! -d ".git" ]; then
               git clone https://github.com/mohamedal2min-u/happy-chicken.git .
             else
-              git pull origin main || git pull origin master
+              git fetch origin
+              git reset --hard origin/main
             fi
             
             # الدخول لمجلد backend إذا كان المشروع منظماً بداخله
-            if [ -d "backend" ]; then cd backend; fi
+            if [ -d "backend" ]; then 
+              cd backend
+              # التأكد من صلاحيات المجلدات للـ Composer
+              chmod -R 775 storage bootstrap/cache
+            fi
             
             # تفعيل المحمل الذاتي وتحديث قاعدة البيانات
             composer install --no-interaction --prefer-dist --optimize-autoloader
