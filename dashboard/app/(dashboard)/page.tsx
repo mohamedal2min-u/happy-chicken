@@ -11,10 +11,13 @@ import {
   HiOutlineBeaker,
   HiOutlineArrowLongLeft,
   HiOutlineCloud,
-  HiOutlineSparkles,
-  HiOutlineExclamationCircle,
   HiOutlineCircleStack,
+  HiOutlineSun,
+  HiOutlineSparkles,
+  HiOutlineCube,
+  HiOutlineExclamationCircle,
 } from "react-icons/hi2";
+import { FaSkull } from "react-icons/fa6";
 import './dashboard.css';
 
 const OpsModals = dynamic(() => import('@/app/_components/dashboard/OpsModals'), {
@@ -239,6 +242,7 @@ function FarmDashboard() {
   const [modalLoading, setModalLoading] = useState(false);
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [invLoading, setInvLoading] = useState(false);
+  const [flockDetails, setFlockDetails] = useState<any>(null);
   
   const [formData, setFormData] = useState({ 
     count: '', quantity: '', unit_price: '', reason: '', amount: '',
@@ -280,6 +284,15 @@ function FarmDashboard() {
     try {
       const resp = await api.get('/dashboard/summary');
       setData(resp.data);
+      const activeFlock = resp.data?.flocks?.[0];
+      if (activeFlock) {
+         try {
+           const detailsResp = await api.get(`/flocks/${activeFlock.id}`);
+           if (detailsResp.data && detailsResp.data.success !== false) {
+             setFlockDetails(detailsResp.data);
+           }
+         } catch(e) {}
+      }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -318,7 +331,24 @@ function FarmDashboard() {
     } finally { setModalLoading(false); }
   };
 
-  const currentFlock = useMemo(() => data?.flocks?.[0], [data]);
+  const currentFlock = useMemo(() => {
+    const flock = data?.flocks?.[0];
+    if (!flock) return null;
+
+    // حساب محلي دقيق للعمر في حال تأخر تحديث السيرفر
+    if (flock.created_at) {
+      const start = new Date(flock.created_at.split('T')[0]);
+      start.setHours(0,0,0,0);
+      const now = new Date();
+      now.setHours(0,0,0,0);
+      const diffTime = Math.abs(now.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      flock.age_days = Math.max(1, diffDays + 1);
+    }
+    return flock;
+  }, [data]);
+  
+  // حسابات اللوحة المحلية (صمام أمان لضمان ظهور الأرقام)
   const mortalityRate = useMemo(() => {
     if (!currentFlock || !currentFlock.start_count || currentFlock.start_count <= 0) return '0.0';
     const dead = currentFlock.start_count - (currentFlock.current_count || 0);
@@ -326,10 +356,49 @@ function FarmDashboard() {
     return rate.toFixed(1);
   }, [currentFlock]);
 
+  const accurateMetrics = useMemo(() => {
+    if (!currentFlock) return { todayMortality: 0, todayExpense: 0, feedBags: 0, age: currentFlock?.age_days || 0 };
+    
+    let age = currentFlock.age_days || 1;
+    let todayMortality = currentFlock.today_mortality || 0;
+    let todayExpense = currentFlock.today_expense || 0;
+    
+    // Fallback feed calculation
+    const count = currentFlock.current_count || currentFlock.start_count || 0;
+    const gram = age < 3 ? 15 : (age < 7 ? 25 : (age < 14 ? 45 : (age < 21 ? 85 : (age < 30 ? 130 : 175))));
+    let feedBags = Math.round((count * gram) / 5000) / 10; 
+
+    // Override with accurate details if available from the specific flock API
+    if (flockDetails && flockDetails.daily_movements && flockDetails.daily_movements.length > 0) {
+      // Latest record is today (index 0)
+      const todayRecord = flockDetails.daily_movements[0];
+      age = todayRecord.day > age ? todayRecord.day : age;
+      todayMortality = todayRecord.mortality > todayMortality ? todayRecord.mortality : todayMortality;
+      todayExpense = todayRecord.expense_amount > todayExpense ? todayRecord.expense_amount : todayExpense;
+      feedBags = todayRecord.estimated_feed_bags || feedBags;
+    }
+    return { age, todayMortality, todayExpense, feedBags };
+  }, [currentFlock, flockDetails]);
+
   const getSuggestedTemp = (age: number) => {
     if (age <= 3) return 33; if (age <= 7) return 30;
     if (age <= 14) return 27; if (age <= 21) return 24; return 21;
   };
+
+  const getDarkeningHours = (age: number) => {
+    if (age <= 3) return "ساعة واحدة";
+    if (age <= 14) return "4 ساعات";
+    if (age <= 28) return "6 ساعات";
+    return "4 ساعات";
+  };
+
+  const getVentilationLevel = (age: number) => {
+    if (age <= 3) return "منخفض (تدفئة)";
+    if (age <= 14) return "متوسط";
+    if (age <= 28) return "عالي";
+    return "قصوى (تبريد)";
+  };
+
 
   if (loading) return <div className="loading-state"><div className="spinner"></div></div>;
 
@@ -339,10 +408,10 @@ function FarmDashboard() {
         <div className="sh-minimal"><div className="line"></div><h3>الإجراءات التشغيلية السريعة</h3></div>
         <div className="action-grid-4">
           <button className="act-btn red" onClick={() => setActiveModal('mortality')}>
-            <div className="icon"><HiOutlineArrowTrendingDown /></div><div className="lbl">تسجيل نفوق</div>
+            <div className="icon"><FaSkull /></div><div className="lbl">تسجيل نفوق</div>
           </button>
           <button className="act-btn orange" onClick={() => setActiveModal('feed')}>
-            <div className="icon"><HiOutlineScale /></div><div className="lbl">توزيع علف</div>
+            <div className="icon"><HiOutlineCube /></div><div className="lbl">توزيع علف</div>
           </button>
           <button className="act-btn blue" onClick={() => setActiveModal('expense')}>
             <div className="icon"><HiOutlineBanknotes /></div><div className="lbl">صرف مالي</div>
@@ -353,59 +422,105 @@ function FarmDashboard() {
         </div>
       </section>
 
-      <section className="active-flock-section">
-        <div className="sh-minimal"><div className="line"></div><h3>وضعية الفوج النشط</h3></div>
-        <div className="flock-command-card" onClick={() => currentFlock && router.push(`/flocks/${currentFlock.id}`)}>
-          <div className="f-top">
-            <div className="f-id"><span className="dot pulse"></span>الفوج الحالي: <b className="number-font"># {currentFlock?.batch_number || '---'}</b></div>
-            <div className="f-status">نشط تشغيلياً</div>
+      <section className="daily-metrics-section animate-slide-up">
+        <div className="sh-minimal"><div className="line red"></div><h3 className="text-red">⚠️ معلومات هامة للرعاية</h3></div>
+        <div className="metrics-grid">
+          <div className="m-card weather-box">
+             <div className="m-icon red" style={{ background: '#fef2f2' }}><HiOutlineSun style={{ color: '#ef4444' }} /></div>
+             <label>الحرارة المطلوبة</label>
+             <div className="val">{currentFlock ? getSuggestedTemp(accurateMetrics.age) : '--'}°C</div>
+             <div className="hint">حافظ على الاستقرار</div>
           </div>
-          <div className="f-main-stats">
-            <div className="ms-item"><label>العمر الحالي</label><div className="v number-font">{currentFlock?.age_days || 0} يوم</div></div>
-            <div className="ms-item border-x"><label>العدد الحي الحالي</label><div className="v number-font">{(currentFlock?.current_count || 0).toLocaleString()} <small>طير</small></div></div>
-            <div className="ms-item"><label>نسبة النفوق</label><div className="v number-font text-red">{mortalityRate}%</div></div>
+
+          <div className="m-card weather-box">
+             <div className="m-icon blue" style={{ background: '#eff6ff' }}><HiOutlineSparkles style={{ color: '#3b82f6' }} /></div>
+             <label>ساعات التعتيم</label>
+             <div className="val">{currentFlock ? getDarkeningHours(accurateMetrics.age) : '--'}</div>
+             <div className="hint">لنمو وتطور سليم</div>
           </div>
-          <div className="f-footer">
-            <span>تاريخ البداية: <b className="number-font">{currentFlock?.created_at?.split('T')[0] || '---'}</b></span>
-            <span className="arrow-go">دخول السجل التفصيلي <HiOutlineArrowLongLeft /></span>
+
+          <div className="m-card weather-box">
+             <div className="m-icon green" style={{ background: '#f0fdf4' }}><HiOutlineSparkles style={{ color: '#10b981' }} /></div>
+             <label>مستوى التهوية</label>
+             <div className="val">{currentFlock ? getVentilationLevel(accurateMetrics.age) : '--'}</div>
+             <div className="hint">تجديد الأوكسجين</div>
+          </div>
+
+          <div className="m-card weather-box">
+             <div className="m-icon orange" style={{ background: '#fff7ed' }}><HiOutlineCube style={{ color: '#f97316' }} /></div>
+             <label>حاجة العلف اليوم</label>
+             <div className="val">{currentFlock ? accurateMetrics.feedBags : '--'} <small>كيس</small></div>
+             <div className="hint">تقديري للفوج</div>
+          </div>
+
+          <div className="m-card weather-box">
+             <div className="m-icon slate" style={{ background: '#f8fafc' }}><HiOutlineCloud style={{ color: '#64748b' }} /></div>
+             <label>طقس المزرعة</label>
+             <div className="val">9°C</div>
+             <div className="hint">صافي | كنصفرة (إدلب)</div>
           </div>
         </div>
       </section>
 
-      <section className="daily-metrics-section">
-        <div className="sh-minimal"><div className="line"></div><h3>مؤشرات التشغيل اليومي</h3></div>
-        <div className="metrics-grid">
-          <div className="m-card">
-            <div className="m-icon red"><HiOutlineExclamationCircle /></div>
-            <label>نفوق اليوم</label>
-            <div className="val number-font text-red">{currentFlock?.today_mortality || 0}</div>
-            <div className="hint">المفقود منذ الفجر</div>
+      <section className="active-flock-section">
+        <div className="sh-minimal"><div className="line"></div><h3>مراقبة الفوج المباشرة</h3></div>
+        
+        {/* ── بطاقة المراقبة الموحدة الفاخرة (تستبدل جميع البطاقات السابقة) ── */}
+        {currentFlock ? (
+          <div className="premium-flock-card animate-slide-down">
+             <div className="pfc-header">
+                <div className="pfc-title">
+                   <span className="dot pulse"></span>
+                   <h2>الفوج الحالي <span>#{currentFlock?.batch_number}</span></h2>
+                   <div className="date-badge">تاريخ البدء: {currentFlock?.created_at?.split('T')[0]}</div>
+                </div>
+                <button className="pfc-go-btn" onClick={() => router.push(`/flocks/${currentFlock.id}`)}>
+                   عرض السجل الكامل <HiOutlineArrowLongLeft />
+                </button>
+             </div>
+             
+             <div className="pfc-main-grid">
+                 <div className="pfc-stat">
+                    <label>العدد الحي الحالي</label>
+                    <div className="val">{(currentFlock?.current_count || 0).toLocaleString()} <small>طير</small></div>
+                    <div className="sub text-red">نسبة النفوق: {mortalityRate}%</div>
+                 </div>
+                 
+                 <div className="pfc-stat highlight">
+                    <label>عمر الفوج</label>
+                    <div className="val">{accurateMetrics.age} <small>يوم</small></div>
+                    <div className="sub text-blue">نشط منذ {accurateMetrics.age} أيام</div>
+                 </div>
+  
+                 <div className="pfc-stat highlight-green">
+                    <label>حاجة العلف لليوم</label>
+                    <div className="val">{accurateMetrics.feedBags} <small>كيس</small></div>
+                    <div className="sub text-green">تقديري (كيس 50كغ)</div>
+                 </div>
+                 
+                 <div className="pfc-stat">
+                    <label>نفوق اليوم</label>
+                    <div className="val text-red">{accurateMetrics.todayMortality}</div>
+                    <div className="sub">طير مفقود اليوم</div>
+                 </div>
+  
+                 <div className="pfc-stat">
+                    <label>مصاريف اليوم</label>
+                    <div className="val text-gold">{accurateMetrics.todayExpense.toLocaleString()} <small>ل.س</small></div>
+                    <div className="sub">إجمالي المشتروات اليومية</div>
+                 </div>
+             </div>
           </div>
-          <div className="m-card">
-            <div className="m-icon orange"><HiOutlineBanknotes /></div>
-            <label>مصروف اليوم</label>
-            <div className="val number-font">{(currentFlock?.today_expense || 0).toLocaleString()} <small>ل.س</small></div>
-            <div className="hint">نثريات وسكر ومياه</div>
+        ) : (
+          <div className="empty-flock-welcome animate-slide-down">
+            <div className="empty-icon">🐣</div>
+            <h2>لا يوجد فـوج نشط حالياً</h2>
+            <p>ابدأ دورة تربية جديدة لمراقبة الإحصائيات والنمو والتحكم بالبيانات</p>
+            <button className="btn-create-flock" onClick={() => router.push('/flocks/new')}>
+              + بـدء فـوج جـديـد
+            </button>
           </div>
-          <div className="m-card highlight-box">
-            <div className="m-icon green"><HiOutlineCircleStack /></div>
-            <label>العلف المقدر (أكياس)</label>
-            <div className="val number-font text-green">{currentFlock?.estimated_feed_bags || 0}</div>
-            <div className="hint">حسب عمر {currentFlock?.age_days || 0} يوم</div>
-          </div>
-          <div className="m-card">
-            <div className="m-icon blue"><HiOutlineSparkles /></div>
-            <label>الحرارة المقترحة</label>
-            <div className="val number-font text-blue">{currentFlock ? getSuggestedTemp(currentFlock.age_days) : '--'}°C</div>
-            <div className="hint">المعيار المثالي للعمر</div>
-          </div>
-          <div className="m-card weather-box">
-            <div className="m-icon slate"><HiOutlineCloud /></div>
-            <label>طقس المزرعة الآن</label>
-            <div className="val number-font">28°C</div>
-            <div className="hint">غائم جزئياً | الرقة</div>
-          </div>
-        </div>
+        )}
       </section>
 
       {activeModal && (
@@ -414,6 +529,7 @@ function FarmDashboard() {
           formData={formData} setFormData={setFormData}
           onSubmit={handleQuickAction} loading={modalLoading}
           inventoryItems={inventoryItems} invLoading={invLoading}
+          currentFlock={currentFlock}
         />
       )}
     </div>

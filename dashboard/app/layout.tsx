@@ -52,7 +52,7 @@ export default function RootLayout({
   // شاشة التحميل الأولية فقط إذا لم نكن في صفحة تسجيل الدخول
   if (mounted && loading && !pathname.startsWith('/login')) {
     return (
-      <html lang="ar" dir="rtl">
+      <html lang="ar" dir="rtl" suppressHydrationWarning>
         <body className={`${tajawal.variable} ${outfit.variable}`}>
            <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: '#0b0f19', color: '#1e6534', fontSize: '24px', fontWeight: 'bold' }}>
              جاري التحقق من الهوية... 🐔
@@ -63,7 +63,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`${tajawal.variable} ${outfit.variable}`}>
         <StyledJsxRegistry>
           <main>{mounted ? children : null}</main>

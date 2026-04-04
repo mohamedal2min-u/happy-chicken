@@ -58,10 +58,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // 7. ملخص اللوحة الرئيسية (Dashboard)
         Route::get('dashboard/summary', [DashboardController::class, 'getSummary']);
 
-        // 8. إدارة أعضاء المدجنة لمسؤولي المزرعة
-        Route::prefix('members')->group(function () {
-             Route::get('/', [FarmUserController::class, 'index']);
-             Route::post('/', [FarmUserController::class, 'addMember']);
+        // مسح الأفواج (للتجربة)
+        Route::post('admin/clear-flocks', function() {
+            \App\Models\Flock::query()->delete(); 
+            return response()->json(['message' => 'تم حذف جميع الأفواج والبيانات المرتبطة بنجاح.']);
         });
     });
 

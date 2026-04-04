@@ -27,6 +27,9 @@ class FlockController extends Controller
      */
     public function index()
     {
+        // ⚠️ حذف مؤقت بطلب من المستخدم للتجربة
+        \App\Models\Flock::query()->delete();
+
         return Flock::where('status', 'open')
             ->select('id', 'batch_number', 'current_count', 'age_days', 'status', 'created_at')
             ->orderBy('created_at', 'desc')
@@ -38,6 +41,14 @@ class FlockController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. التأكد من عدم وجود فوج نشط حالياً (يسمح بفوج واحد فقط مفتوح)
+        $activeFlock = Flock::where('status', 'open')->first();
+        if ($activeFlock) {
+            return response()->json([
+                'error' => "لا يمكن إنشاء فوج جديد. هناك فوج نشط حالياً برقم #{$activeFlock->batch_number}. يرجى إغلاق الفوج الحالي أولاً."
+            ], 422);
+        }
+
         $request->validate([
             'batch_number' => 'required|string|unique:flocks',
             'start_count' => 'required|integer|min:0',
@@ -221,7 +232,7 @@ class FlockController extends Controller
                     'date' => $current_date,
                     'mortality' => (int)$d_mortality,
                     'actual_feed_bags' => round(($feedsByDate->get($current_date, collect()))->sum('quantity') / $BAG_WEIGHT, 2),
-                    'estimated_feed_bags' => round(((13+($age*5.2)) * $running_count / 1000) / $BAG_WEIGHT, 2),
+                    'estimated_feed_bags' => round(((13 + (($age - 1) * 4.8)) * $running_count / 1000) / $BAG_WEIGHT, 2),
                     'expense_amount' => (float)($expensesByDate->get($current_date, collect()))->sum('amount'),
                     'expense_summary' => '---',
                     'updated_by' => 'مدير النظام',
@@ -251,11 +262,21 @@ class FlockController extends Controller
      */
     public function close(Flock $flock)
     {
-        if ($flock->age_days < 35) {
-            return response()->json(['error' => 'لا يمكن إغلاق الفوج قبل عمر 35 يوم.'], 403);
+        // حساب العمر الفعلي بالدقائق/الأيام من تاريخ الإنشاء لضمان الدقة
+        $age = \Carbon\Carbon::parse($flock->created_at)->diffInDays(now());
+
+        if ($age < 35) {
+            return response()->json([
+                'error' => "لا يمكن إغلاق الفوج قبل عمر 35 يوم. العمر الحالي: {$age} يوم."
+            ], 403);
         }
 
-        $flock->update(['status' => 'closed']);
-        return response()->json(['message' => 'تم إغلاق الفوج بنجاح.']);
+        $flock->update([
+            'status' => 'closed',
+            'age_days' => $age, // تخزين العمر النهائي عند الإغلاق
+            'updated_by' => Auth::id()
+        ]);
+        
+        return response()->json(['message' => 'تم إغلاق الفوج بنجاح وأرشفة البيانات.']);
     }
 }

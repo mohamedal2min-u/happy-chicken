@@ -11,8 +11,12 @@ storage/*.key
 
 # Environment
 .env
-.env.backup
+.env.local
+.env.development
 .env.production
+.env.test
+.env*.local
+.env.backup
 .php-cs-fixer.cache
 .phpunit.cache
 

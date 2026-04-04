@@ -4,8 +4,11 @@ import React from 'react';
 import { 
   HiOutlineExclamationCircle, 
   HiOutlineCircleStack, 
-  HiOutlineBeaker
+  HiOutlineBeaker,
+  HiOutlineScale,
+  HiOutlineBanknotes
 } from "react-icons/hi2";
+import { FaSkull } from "react-icons/fa6";
 
 interface OpsModalsProps {
   activeModal: string | null;
@@ -16,6 +19,7 @@ interface OpsModalsProps {
   loading: boolean;
   inventoryItems: any[];
   invLoading: boolean;
+  currentFlock: any;
 }
 
 export default function OpsModals({
@@ -26,7 +30,8 @@ export default function OpsModals({
   onSubmit,
   loading,
   inventoryItems,
-  invLoading
+  invLoading,
+  currentFlock
 }: OpsModalsProps) {
   if (!activeModal) return null;
 
@@ -46,18 +51,30 @@ export default function OpsModals({
           <button className="close-x" onClick={() => setActiveModal(null)}>×</button>
         </div>
         <form onSubmit={onSubmit} className="modal-form">
-          {activeModal === 'mortality' && (
-             <div className="group">
-                <label>عدد الطيور النافقة اليوم</label>
-                <input type="number" className="number-font" value={formData.count} onChange={e => setFormData({...formData, count: e.target.value})} autoFocus required />
+          {!currentFlock && activeModal !== 'expense' ? (
+             <div className="error-alert animate-shake">
+                <HiOutlineExclamationCircle /> عذراً، لا يوجد فوج نشط حالياً للقيام بهذه العملية. يرجى البدء بفتح فوج جديد أولاً.
              </div>
-          )}
-          {activeModal === 'feed' && (
-             <div className="group">
-                <label>كمية العلف (عدد الأكياس)</label>
-                <input type="number" step="0.5" className="number-font" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} autoFocus required />
-             </div>
-          )}
+          ) : (
+            <>
+              {activeModal === 'mortality' && (
+                 <div className="group animate-slide-up">
+                    <label><FaSkull className="text-red" /> عدد الطيور النافقة اليوم</label>
+                    <div className="input-with-sub">
+                      <input type="number" className="number-font" value={formData.count} onChange={e => setFormData({...formData, count: e.target.value})} autoFocus required placeholder="0" />
+                      <span className="sub-hint">سيتم خصمها من العدد الحي للفوج</span>
+                    </div>
+                 </div>
+              )}
+              {activeModal === 'feed' && (
+                 <div className="group animate-slide-up">
+                    <label><HiOutlineScale className="text-orange" /> كمية العلف الموزعة (أكياس)</label>
+                    <div className="input-with-sub">
+                      <input type="number" step="0.5" className="number-font" value={formData.quantity} onChange={e => setFormData({...formData, quantity: e.target.value})} autoFocus required placeholder="مثلاً: 2.5" />
+                      <span className="sub-hint">الكيس الواحد يعادل 50 كغ</span>
+                    </div>
+                 </div>
+              )}
           {activeModal === 'medicine' && (
              <>
                 <div className="group">
@@ -170,17 +187,17 @@ export default function OpsModals({
                 </div>
              </>
           )}
-          {activeModal === 'expense' && (
-             <>
-                <div className="group">
-                   <label>نوع المصروف الشائع</label>
-                   <select 
-                     className="form-select" 
-                     value={formData.description} 
-                     onChange={e => setFormData({...formData, description: e.target.value, quantity: '', unit_price: '', amount: ''})}
-                     autoFocus
-                     required
-                   >
+           {activeModal === 'expense' && (
+              <>
+                 <div className="group animate-slide-up">
+                    <label><HiOutlineBanknotes className="text-blue" /> نوع المصروف</label>
+                    <select 
+                      className="form-select" 
+                      value={formData.description} 
+                      onChange={e => setFormData({...formData, description: e.target.value, quantity: '', unit_price: '', amount: ''})}
+                      autoFocus
+                      required
+                    >
                       <option value="">-- اختر النوع --</option>
                       <option value="راتب ناطور">راتب ناطور</option>
                       <option value="راتب مشرف ومتابعة">راتب مشرف ومتابعة</option>
@@ -250,7 +267,7 @@ export default function OpsModals({
           <button 
             type="submit" 
             className="btn-submit-pro" 
-            disabled={loading || (activeModal === 'medicine' && (inventoryItems.length === 0 || (() => {
+            disabled={loading || (!currentFlock && activeModal !== 'expense') || (activeModal === 'medicine' && (inventoryItems.length === 0 || (() => {
                 const item = inventoryItems.find(i => i.id.toString() === formData.item_id);
                 const days = formData.start_date && formData.end_date ? Math.ceil((new Date(formData.end_date).getTime() - new Date(formData.start_date).getTime()) / 86400000) + 1 : 1;
                 const total = ['لتر', 'liter', 'ليتر'].includes(item?.unit?.toLowerCase()) ? (parseFloat(formData.daily_quantity || '0') / 1000) * days : parseFloat(formData.daily_quantity || '0') * days;
@@ -258,9 +275,12 @@ export default function OpsModals({
             })()))}
           >
              {loading ? 'جاري الحفظ...' : 
+              (!currentFlock && activeModal !== 'expense') ? 'لا يمكن التسجيل - لا يوجد فوج نشط' :
               (activeModal === 'medicine' && inventoryItems.length === 0) ? 'المخزون فارغ - لا يمكن الإكمال' : 
               'تأكيد العملية وحفظ السجل'}
           </button>
+          </>
+        )}
         </form>
       </div>
     </div>

@@ -16,55 +16,62 @@ class DashboardController extends Controller
     public function getSummary()
     {
         $farmId = \App\Models\FarmContext::getFarmId();
+        $today = date('Y-m-d');
 
-        // 1. الأفواج الجارية (المفتوحة) مع الحسابات اليومية
-        $activeFlocks = Flock::where('status', 'open')->get();
+        // 1. جلب الأفواج الجارية وحساب بياناتها بدقة
+        $activeFlocks = Flock::where('status', 'open')
+            ->where('farm_id', $farmId)
+            ->get();
 
-        $activeFlocks = $activeFlocks->map(function ($flock) {
-            // حساب نفوق اليوم لهذا الفوج
-            $flock->today_mortality = (int)$flock->mortalities()
-                ->whereDate('date', now())
+        $flocksData = $activeFlocks->map(function ($flock) use ($today) {
+            $data = $flock->toArray();
+            
+            // حساب العمر الفعلي بشكل ديناميكي (يعتبر يوم الإدخال هو اليوم 1)
+            $start_date = \Carbon\Carbon::parse($flock->created_at)->startOfDay();
+            $dynamic_age = max(1, $start_date->diffInDays(\Carbon\Carbon::now()->startOfDay()) + 1);
+            $data['age_days'] = $dynamic_age;
+
+            // حساب نفوق اليوم لهذا الفوج - استخدام whereDate للبحث الأدق
+            $data['today_mortality'] = (int)$flock->mortalities()
+                ->whereDate('date', $today)
                 ->sum('count');
 
-            // حساب مصروف اليوم لهذا الفوج
-            $flock->today_expense = (float)$flock->expenses()
-                ->whereDate('date', now())
+            // حساب مصرف اليوم لهذا الفوج
+            $data['today_expense'] = (float)$flock->expenses()
+                ->whereDate('date', $today)
                 ->sum('amount');
 
-            // حساب العلف المقدر (أكياس) حسب العمر
-            $age = $flock->age_days;
-            $birdCount = $flock->current_count;
-            // معادلة تقريبية: (العدد * جرام لكل عمر) / 50000 كغ للكيس
-            $gramPerBird = $age < 7 ? 20 : ($age < 14 ? 50 : ($age < 21 ? 90 : ($age < 30 ? 140 : 180)));
-            $flock->estimated_feed_bags = round(($birdCount * $gramPerBird) / 50000, 1);
+            // حساب العلف المقدر (أكياس) حسب العمر الديناميكي والعدد الحالي
+            $age = $dynamic_age;
+            $count = (int)($flock->current_count ?? $flock->start_count);
+            
+            // تحويل من جرام إلى أكياس متوافق مع حساب الفرونت إند
+            $gramPerBird = $age < 3 ? 15 : ($age < 7 ? 25 : ($age < 14 ? 45 : ($age < 21 ? 85 : ($age < 30 ? 130 : 175))));
+            $totalGrams = $count * $gramPerBird;
+            $data['estimated_feed_bags'] = round($totalGrams / 50000, 1);
 
-            return $flock;
+            return $data;
         });
 
-        // 2. إجمالي عدد الطيور الحي حالياً
-        $totalLiveCount = $activeFlocks->sum('current_count');
-
-        // 3. إجمالي المصاريف (الشهر الحالي) للمزرعة بالكامل
+        // 2. إحصائيات المزرعة بالكامل للشهر الحالي
         $totalExpenses = Expense::where('farm_id', $farmId)
-            ->whereYear('date', now()->year)
-            ->whereMonth('date', now()->month)
+            ->whereYear('date', date('Y'))
+            ->whereMonth('date', date('m'))
             ->sum('amount');
 
-        // 4. إجمالي المبيعات (الشهر الحالي) للمزرعة بالكامل
         $totalSales = Sale::where('farm_id', $farmId)
-            ->whereYear('date', now()->year)
-            ->whereMonth('date', now()->month)
+            ->whereYear('date', date('Y'))
+            ->whereMonth('date', date('m'))
             ->sum('total_amount');
 
         return response()->json([
             'summary' => [
                 'active_flocks_count' => $activeFlocks->count(),
-                'total_live_birds' => (int) $totalLiveCount,
-                'monthly_expenses' => (float) $totalExpenses,
-                'monthly_sales' => (float) $totalSales,
-                'balance' => $totalSales - $totalExpenses,
+                'total_birds' => (int) $activeFlocks->sum('current_count'),
+                'today_date' => $today
             ],
-            'flocks' => $activeFlocks,
+            'flocks' => $flocksData,
+            'status' => 'success'
         ]);
     }
 

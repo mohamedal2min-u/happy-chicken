@@ -1,10 +1,21 @@
 {
   "pages": {
+    "/(auth)/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/(auth)/login/page.css",
+      "static/chunks/app/(auth)/login/page.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
+    ],
+    "/(dashboard)/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/layout.js"
     ],
     "/(dashboard)/page": [
       "static/chunks/webpack.js",
@@ -12,41 +23,25 @@
       "static/css/app/(dashboard)/page.css",
       "static/chunks/app/(dashboard)/page.js"
     ],
-    "/(dashboard)/layout": [
+    "/(dashboard)/flocks/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/layout.js"
-    ],
-    "/(auth)/login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/(auth)/login/page.css",
-      "static/chunks/app/(auth)/login/page.js"
+      "static/chunks/app/(dashboard)/flocks/[id]/page.js"
     ],
     "/(dashboard)/flocks/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/flocks/page.js"
     ],
+    "/(dashboard)/flocks/new/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/flocks/new/page.js"
+    ],
     "/(dashboard)/inventory/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/inventory/page.js"
-    ],
-    "/(dashboard)/flocks/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/flocks/[id]/page.js"
-    ],
-    "/(dashboard)/partners/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/partners/page.js"
-    ],
-    "/not-found": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/not-found.js"
     ]
   }
 }
