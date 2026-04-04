@@ -64,8 +64,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { name: 'الأفواج', path: '/flocks', icon: '🐣' },
         { name: 'المخزن', path: '/inventory', icon: '📦' },
         { name: 'الشركاء', path: '/partners', icon: '🤝' },
-        { name: 'المصاريف', path: '/expenses', icon: '💸' },
         { name: 'المبيعات', path: '/sales', icon: '📈' },
+        { name: 'المحاسبة', path: '/expenses', icon: '⚖️' },
       ];
 
 

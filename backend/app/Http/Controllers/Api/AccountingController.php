@@ -112,4 +112,28 @@ class AccountingController extends Controller
     {
         return Sale::orderBy('date', 'desc')->get();
     }
+
+    /**
+     * حذف مصروف.
+     */
+    public function destroyExpense(Expense $expense)
+    {
+        if ($expense->farm_id !== FarmContext::getFarmId()) {
+            return response()->json(['error' => 'غير مصرح'], 403);
+        }
+        $expense->delete();
+        return response()->json(['message' => 'تم حذف المصروف بنجاح.']);
+    }
+
+    /**
+     * حذف عملية مبيع.
+     */
+    public function destroySale(Sale $sale)
+    {
+        if ($sale->farm_id !== FarmContext::getFarmId()) {
+            return response()->json(['error' => 'غير مصرح'], 403);
+        }
+        $sale->delete();
+        return response()->json(['message' => 'تم مبيعات بنجاح.']);
+    }
 }

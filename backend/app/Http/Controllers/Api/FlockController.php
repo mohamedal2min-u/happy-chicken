@@ -12,6 +12,7 @@ use App\Services\FlockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\PartnerTransaction;
 
 class FlockController extends Controller
 {
@@ -27,8 +28,10 @@ class FlockController extends Controller
      */
     public function index()
     {
-        return Flock::where('status', 'open')
-            ->select('id', 'batch_number', 'current_count', 'age_days', 'status', 'created_at')
+        // Return all flocks but separate by status logically if needed,
+        // for now just all flocks ordered by creation
+        return Flock::select('id', 'batch_number', 'current_count', 'age_days', 'status', 'created_at')
+            ->orderByRaw("CASE WHEN status = 'open' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -255,10 +258,14 @@ class FlockController extends Controller
     }
 
     /**
-     * إغلاق الفوج.
+     * إغلاق الفوج وتوزيع الأرباح/الخسائر آلياً بناءً على الحصص.
      */
     public function close(Flock $flock)
     {
+        if ($flock->status === 'closed') {
+            return response()->json(['error' => 'هذا الفوج مغلق مسبقاً.'], 422);
+        }
+
         // حساب العمر الفعلي بالدقائق/الأيام من تاريخ الإنشاء لضمان الدقة
         $age = \Carbon\Carbon::parse($flock->created_at)->diffInDays(now());
 
@@ -268,12 +275,56 @@ class FlockController extends Controller
             ], 403);
         }
 
-        $flock->update([
-            'status' => 'closed',
-            'age_days' => $age, // تخزين العمر النهائي عند الإغلاق
-            'updated_by' => Auth::id()
-        ]);
-        
-        return response()->json(['message' => 'تم إغلاق الفوج بنجاح وأرشفة البيانات.']);
+        // حساب المبيعات والمصاريف الخاصة بهذا الفوج
+        $totalSales = $flock->sales()->sum('total_amount');
+        $totalExpenses = $flock->expenses()->sum('amount');
+        $netProfit = $totalSales - $totalExpenses;
+
+        return DB::transaction(function () use ($flock, $age, $netProfit, $totalSales, $totalExpenses) {
+            // 1. تحديث حالة الفوج وتوثيق البيانات النهائية
+            $flock->update([
+                'status' => 'closed',
+                'age_days' => $age,
+                'updated_by' => Auth::id()
+            ]);
+
+            // 2. توزيع المبالغ على الشركاء آلياً بناءً على حصصهم في المدجنة
+            $farm_id = $flock->farm_id;
+            $shares = DB::table('farm_partner_shares')
+                ->where('farm_id', $farm_id)
+                ->get();
+
+            $distributedCount = 0;
+            foreach ($shares as $share) {
+                // نصيب الشريك من صافي الربح أو الخسارة
+                $partnerAmount = ($netProfit * $share->share_percentage) / 100;
+                
+                // نوع الحركة: إذا كان ربح -> توزيع (+)، إذا كانت خسارة -> سحب (-)
+                $type = $netProfit >= 0 ? 'profit_distribution' : 'withdrawal';
+                
+                PartnerTransaction::create([
+                    'farm_id' => $farm_id,
+                    'partner_id' => $share->partner_id,
+                    'amount' => abs($partnerAmount),
+                    'type' => $type,
+                    'date' => now()->toDateString(),
+                    'notes' => "[توزيع آلي - إغلاق فوج #{$flock->batch_number}] " . 
+                               "بناءً على حصة مساهمة تبلغ %{$share->share_percentage}. " .
+                               "إجمالي صافي الربح/الخسارة: " . number_format($netProfit) . " ل.س",
+                    'created_by' => Auth::id(),
+                ]);
+                $distributedCount++;
+            }
+
+            return response()->json([
+                'message' => 'تم إغلاق الفوج بنجاح وتوزيع العوائد المالية على كافة الشركاء آلياً.',
+                'stats' => [
+                    'sales' => $totalSales,
+                    'expenses' => $totalExpenses,
+                    'net_profit' => $netProfit,
+                    'partners_affected' => $distributedCount
+                ]
+            ]);
+        });
     }
 }

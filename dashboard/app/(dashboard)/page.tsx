@@ -272,8 +272,12 @@ function FarmDashboard() {
     setInvLoading(true);
     try {
       const resp = await api.get('/inventory');
-      const meds = resp.data.filter((it: any) => 
-        it.type?.name?.includes('دواء') || it.type?.name?.includes('لقاح') || it.type_id === 2
+      const allItems = resp.data.items || [];
+      const meds = allItems.filter((it: any) => 
+        it.type?.name?.includes('دواء') || 
+        it.type?.name?.includes('لقاح') || 
+        it.type_id === 2 || 
+        it.type_id === 3
       );
       setInventoryItems(meds);
     } catch (err) { console.error(err); }

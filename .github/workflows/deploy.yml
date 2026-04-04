@@ -64,12 +64,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Cache Node Modules
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: dashboard/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('dashboard/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Build Dashboard
         run: |
           cd dashboard
-          npm install
+          if [ "${{ steps.npm-cache.outputs.cache-hit }}" != "true" ]; then
+            npm ci
+          fi
           npm run build
+          # ضغط الملفات لتسريع النقل
+          tar -czf build-artifacts.tar.gz .next public package.json next.config.mjs
 
       - name: Upload Dashboard to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -77,7 +92,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME_FRONTEND }}
           password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
-          source: "dashboard/.next,dashboard/public,dashboard/package.json,dashboard/next.config.mjs"
+          source: "dashboard/build-artifacts.tar.gz"
           target: "/home/maa/htdocs/ch.alamin.se"
           strip_components: 1
 
@@ -89,6 +104,11 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
           script: |
             cd /home/maa/htdocs/ch.alamin.se
+            
+            # فك ضغط الملفات المرفوعة
+            tar -xzf build-artifacts.tar.gz
+            rm build-artifacts.tar.gz
+            
             # التأكد من المسارات والمكتبات
             export PATH=$PATH:/home/maa/.nvm/versions/node/$(node -v)/bin
             npm install --production

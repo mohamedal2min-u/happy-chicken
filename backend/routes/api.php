@@ -38,14 +38,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::prefix('accounting')->group(function () {
             Route::get('expenses', [AccountingController::class, 'getExpenses']);
             Route::post('expenses', [AccountingController::class, 'storeExpense']);
+            Route::delete('expenses/{expense}', [AccountingController::class, 'destroyExpense']);
             Route::get('sales', [AccountingController::class, 'getSales']);
             Route::post('sales', [AccountingController::class, 'storeSale']);
+            Route::delete('sales/{sale}', [AccountingController::class, 'destroySale']);
         });
 
         // 5. المخزون (Inventory)
         Route::prefix('inventory')->group(function () {
             Route::get('/', [InventoryController::class, 'index']);
             Route::post('/', [InventoryController::class, 'store']);
+            Route::post('/shipment', [InventoryController::class, 'addShipment']);
+            Route::delete('/{item}', [InventoryController::class, 'destroy']);
         });
 
         // 6. الشركاء (Partners)
@@ -53,16 +57,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::get('/', [PartnerController::class, 'index']);
             Route::post('/', [PartnerController::class, 'store']);
             Route::post('/transaction', [PartnerController::class, 'storeTransaction']);
+            Route::get('/{partner}/transactions', [PartnerController::class, 'transactions']);
+            Route::post('/distribute', [PartnerController::class, 'distribute']);
         });
 
         // 7. ملخص اللوحة الرئيسية (Dashboard)
         Route::get('dashboard/summary', [DashboardController::class, 'getSummary']);
 
-        // مسح الأفواج (للتجربة)
-        Route::post('admin/clear-flocks', function() {
-            \App\Models\Flock::query()->delete(); 
-            return response()->json(['message' => 'تم حذف جميع الأفواج والبيانات المرتبطة بنجاح.']);
-        });
+        // نهاية مسارات سياق المزرعة
     });
 
     // 9. إدارة المداجن المركزية (للمدير العام فقط - خارج سياق المزرعة)
@@ -70,6 +72,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/farms', [\App\Http\Controllers\Api\FarmController::class, 'store']);
         Route::patch('/farms/{farm}/toggle-status', [\App\Http\Controllers\Api\FarmController::class, 'toggleStatus']);
         Route::get('/admin/summary', [\App\Http\Controllers\Api\DashboardController::class, 'getSuperAdminSummary']);
+        
+        // مسح الأفواج (للمدير العام فقط وعند الضرورة القصوى)
+        Route::post('/admin/clear-flocks', function() {
+            \App\Models\Flock::query()->delete(); 
+            return response()->json(['message' => 'تم حذف جميع الأفواج والبيانات المرتبطة بنجاح.']);
+        });
     });
 
 });

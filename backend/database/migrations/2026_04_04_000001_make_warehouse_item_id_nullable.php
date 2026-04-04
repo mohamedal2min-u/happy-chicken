@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('inventory_transactions', function (Blueprint $table) {
+            // Make warehouse_item_id nullable because we might not use warehouses table
+            $table->unsignedBigInteger('warehouse_item_id')->nullable()->change();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('inventory_transactions', function (Blueprint $table) {
+            $table->unsignedBigInteger('warehouse_item_id')->nullable(false)->change();
+        });
+    }
+};
