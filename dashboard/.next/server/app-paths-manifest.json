@@ -1,6 +1,4 @@
 {
-  "/not-found": "app/not-found.js",
-  "/icon.png/route": "app/icon.png/route.js",
   "/(dashboard)/page": "app/(dashboard)/page.js",
   "/(dashboard)/flocks/page": "app/(dashboard)/flocks/page.js",
   "/(dashboard)/flocks/[id]/page": "app/(dashboard)/flocks/[id]/page.js",

@@ -18,6 +18,9 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME_BACKEND }}
           password: ${{ secrets.VPS_PASSWORD_BACKEND }}
+          port: 22
+          timeout: 60s
+          command_timeout: 30m
           script: |
             # المسار الرئيسي للمشروع
             TARGET_DIR="/home/alamin-api/htdocs/api.alamin.se"
@@ -92,6 +95,8 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME_FRONTEND }}
           password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
+          port: 22
+          timeout: 60s
           source: "dashboard/build-artifacts.tar.gz"
           target: "/home/maa/htdocs/ch.alamin.se"
           strip_components: 1
@@ -102,6 +107,9 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME_FRONTEND }}
           password: ${{ secrets.VPS_PASSWORD_FRONTEND }}
+          port: 22
+          timeout: 60s
+          command_timeout: 30m
           script: |
             cd /home/maa/htdocs/ch.alamin.se
             

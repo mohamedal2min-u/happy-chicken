@@ -3,6 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Inter, Tajawal } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const tajawal = Tajawal({ 
+  subsets: ['arabic'], 
+  weight: ['400', '500', '700', '800', '900'],
+  variable: '--font-tajawal'
+});
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -78,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${inter.variable} ${tajawal.variable}`}>
       {/* Floating Theme Toggle (High Precision FAB) */}
       <button 
         onClick={toggleTheme} 

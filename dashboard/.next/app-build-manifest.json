@@ -21,7 +21,8 @@
     "/(dashboard)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/layout.js"
+      "static/chunks/app/(dashboard)/layout.js",
+      "static/css/app/(dashboard)/layout.css"
     ],
     "/(dashboard)/inventory/page": [
       "static/chunks/webpack.js",
@@ -52,11 +53,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/flocks/[id]/page.js"
-    ],
-    "/not-found": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/not-found.js"
     ]
   }
 }
