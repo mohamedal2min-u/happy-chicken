@@ -1,9 +1,8 @@
 {
   "/not-found": "app/not-found.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(dashboard)/page": "app/(dashboard)/page.js",
   "/(dashboard)/inventory/page": "app/(dashboard)/inventory/page.js",
-  "/(dashboard)/flocks/page": "app/(dashboard)/flocks/page.js",
   "/(dashboard)/partners/page": "app/(dashboard)/partners/page.js",
-  "/(dashboard)/sales/page": "app/(dashboard)/sales/page.js"
+  "/(dashboard)/flocks/page": "app/(dashboard)/flocks/page.js",
+  "/(dashboard)/sales/page": "app/(dashboard)/sales/page.js",
+  "/(dashboard)/expenses/page": "app/(dashboard)/expenses/page.js"
 }

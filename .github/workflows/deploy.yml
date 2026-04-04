@@ -83,8 +83,8 @@ jobs:
             npm ci
           fi
           npm run build
-          # ضغط الملفات لتسريع النقل
-          tar -czf build-artifacts.tar.gz .next public package.json next.config.mjs
+          # ضغط الملفات لتسريع النقل (بدون public لعدم توفره حالياً)
+          tar -czf build-artifacts.tar.gz .next package.json next.config.mjs
 
       - name: Upload Dashboard to VPS
         uses: appleboy/scp-action@v0.1.7
