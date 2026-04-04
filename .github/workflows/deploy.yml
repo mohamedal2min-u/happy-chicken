@@ -20,16 +20,22 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD_BACKEND }}
           script: |
             # المسار الرئيسي للمشروع
-            mkdir -p /home/alamin-api/htdocs/api.alamin.se
-            cd /home/alamin-api/htdocs/api.alamin.se
+            TARGET_DIR="/home/alamin-api/htdocs/api.alamin.se"
+            mkdir -p $TARGET_DIR
+            cd $TARGET_DIR
+            
+            # محاولة تصحيح ملكية المجلد إذا توفرت الصلاحية
+            sudo chown -R $USER:$USER . 2>/dev/null || echo "تنبيه: تعذر تغيير الملكية، سنحاول المتابعة بالصلاحيات الحالية"
             
             # حل مشكلة الملكية في Git
-            git config --global --add safe.directory /home/alamin-api/htdocs/api.alamin.se
+            git config --global --add safe.directory $TARGET_DIR
             
             # إذا لم يكن المشروع مربوطاً بـ Git، سنحاول ربطه أو سحب الكود
             if [ ! -d ".git" ]; then
               git clone https://github.com/mohamedal2min-u/happy-chicken.git .
             else
+              # تنظيف أقفال Git إذا وجدت بسبب فشل سابق
+              rm -f .git/index.lock
               git fetch origin
               git reset --hard origin/main
             fi
@@ -37,8 +43,8 @@ jobs:
             # الدخول لمجلد backend إذا كان المشروع منظماً بداخله
             if [ -d "backend" ]; then 
               cd backend
-              # التأكد من صلاحيات المجلدات للـ Composer
-              chmod -R 775 storage bootstrap/cache
+              # محاولة تصحيح الصلاحيات للمجلدات الحساسة
+              chmod -R 777 storage bootstrap/cache 2>/dev/null || echo "تنبيه: تعذر تغيير صلاحيات المجلدات، قد يفشل composer"
             fi
             
             # تفعيل المحمل الذاتي وتحديث قاعدة البيانات
