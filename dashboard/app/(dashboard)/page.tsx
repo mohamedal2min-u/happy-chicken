@@ -357,32 +357,36 @@ function FarmDashboard() {
   }, [currentFlock]);
 
   const accurateMetrics = useMemo(() => {
-    if (!currentFlock) return { todayMortality: 0, todayExpense: 0, feedBags: 0, age: currentFlock?.age_days || 0 };
+    if (!currentFlock) return { todayMortality: 0, todayExpense: 0, feedBags: 0, feedKg: 0, age: currentFlock?.age_days || 0 };
     
     let age = currentFlock.age_days || 1;
     let todayMortality = currentFlock.today_mortality || 0;
     let todayExpense = currentFlock.today_expense || 0;
     
-    // Fallback feed calculation
     const count = currentFlock.current_count || currentFlock.start_count || 0;
-    const gram = age < 3 ? 15 : (age < 7 ? 25 : (age < 14 ? 45 : (age < 21 ? 85 : (age < 30 ? 130 : 175))));
-    let feedBags = Math.round((count * gram) / 5000) / 10; 
+    const gram = age <= 3 ? 15 : (age <= 7 ? 25 : (age <= 14 ? 55 : (age <= 21 ? 95 : (age <= 30 ? 145 : 185))));
+    let feedKg = Math.round((count * gram) / 1000);
+    let feedBags = (feedKg / 50).toFixed(1);
 
-    // Override with accurate details if available from the specific flock API
     if (flockDetails && flockDetails.daily_movements && flockDetails.daily_movements.length > 0) {
-      // Latest record is today (index 0)
       const todayRecord = flockDetails.daily_movements[0];
       age = todayRecord.day > age ? todayRecord.day : age;
       todayMortality = todayRecord.mortality > todayMortality ? todayRecord.mortality : todayMortality;
       todayExpense = todayRecord.expense_amount > todayExpense ? todayRecord.expense_amount : todayExpense;
-      feedBags = todayRecord.estimated_feed_bags || feedBags;
+      if (todayRecord.estimated_feed_bags) {
+        feedBags = todayRecord.estimated_feed_bags.toString();
+        feedKg = Math.round(todayRecord.estimated_feed_bags * 50);
+      }
     }
-    return { age, todayMortality, todayExpense, feedBags };
+    return { age, todayMortality, todayExpense, feedBags, feedKg };
   }, [currentFlock, flockDetails]);
 
   const getSuggestedTemp = (age: number) => {
-    if (age <= 3) return 33; if (age <= 7) return 30;
-    if (age <= 14) return 27; if (age <= 21) return 24; return 21;
+    if (age <= 3) return { target: 33, min: 32, max: 34 };
+    if (age <= 7) return { target: 30, min: 29, max: 32 };
+    if (age <= 14) return { target: 27, min: 26, max: 29 };
+    if (age <= 21) return { target: 24, min: 23, max: 25 };
+    return { target: 21, min: 20, max: 23 };
   };
 
   const getDarkeningHours = (age: number) => {
@@ -428,8 +432,16 @@ function FarmDashboard() {
           <div className="m-card weather-box">
              <div className="m-icon red" style={{ background: '#fef2f2' }}><HiOutlineSun style={{ color: '#ef4444' }} /></div>
              <label>الحرارة المطلوبة</label>
-             <div className="val">{currentFlock ? getSuggestedTemp(accurateMetrics.age) : '--'}°C</div>
-             <div className="hint">حافظ على الاستقرار</div>
+             <div className="val">
+               {currentFlock ? `${getSuggestedTemp(accurateMetrics.age).target}°C` : '--'}
+             </div>
+             <div className="hint" style={{ fontSize: '0.75rem', marginTop: '4px' }}>
+               {currentFlock ? (
+                 <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
+                   أدنى: {getSuggestedTemp(accurateMetrics.age).min}° | أقصى: {getSuggestedTemp(accurateMetrics.age).max}°
+                 </span>
+               ) : 'حافظ على الاستقرار'}
+             </div>
           </div>
 
           <div className="m-card weather-box">
@@ -449,8 +461,12 @@ function FarmDashboard() {
           <div className="m-card weather-box">
              <div className="m-icon orange" style={{ background: '#fff7ed' }}><HiOutlineCube style={{ color: '#f97316' }} /></div>
              <label>حاجة العلف اليوم</label>
-             <div className="val">{currentFlock ? accurateMetrics.feedBags : '--'} <small>كيس</small></div>
-             <div className="hint">تقديري للفوج</div>
+             <div className="val">
+               {currentFlock ? `${accurateMetrics.feedKg}` : '--'} <small>كجم</small>
+             </div>
+             <div className="hint" style={{ color: '#f97316', fontWeight: 'bold' }}>
+               ≈ {currentFlock ? accurateMetrics.feedBags : '--'} كيس (50kg)
+             </div>
           </div>
 
           <div className="m-card weather-box">

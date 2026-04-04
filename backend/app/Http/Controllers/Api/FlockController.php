@@ -27,9 +27,6 @@ class FlockController extends Controller
      */
     public function index()
     {
-        // ⚠️ حذف مؤقت بطلب من المستخدم للتجربة
-        \App\Models\Flock::query()->delete();
-
         return Flock::where('status', 'open')
             ->select('id', 'batch_number', 'current_count', 'age_days', 'status', 'created_at')
             ->orderBy('created_at', 'desc')
