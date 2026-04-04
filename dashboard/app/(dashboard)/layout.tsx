@@ -79,28 +79,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="app-container">
+      {/* Floating Theme Toggle (High Precision FAB) */}
+      <button 
+        onClick={toggleTheme} 
+        className="fab-theme-toggle" 
+        title={theme === 'light' ? 'الوضع الليلي' : 'الوضع النهاري'}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+
       {/* Sidebar (Desktop) */}
       <aside className="sidebar">
-        <div className="sidebar-logo" style={{ marginBottom: '20px', padding: '10px' }}>
+        <div className="sidebar-logo">
           <h2 style={{ color: 'var(--primary)', fontWeight: '900' }}>دجاجتي 🐓</h2>
           <p style={{ fontSize: '12px', opacity: 0.7 }}>نظام إدارة المزارع</p>
         </div>
 
-
         <nav>
           {navItems.map((item) => (
             <Link key={item.path} href={item.path} className={`nav-link ${pathname === item.path ? 'active' : ''}`}>
-              <span style={{ fontSize: '20px' }}>{item.icon}</span>
+              <span className="icon-wrap">{item.icon}</span>
               {item.name}
             </Link>
           ))}
         </nav>
 
-        <button onClick={toggleTheme} className="btn-theme-toggle" title="تحويل اللون">
-          {theme === 'light' ? '🌙' : '☀️'}
-        </button>
-
-        <button onClick={handleLogout} className="nav-link" style={{ marginTop: '20px', border: 'none', background: 'none', cursor: 'pointer', width: '100%' }}>
+        <button onClick={handleLogout} className="nav-link logout-btn">
           <span>🚪</span> تسجيل الخروج
         </button>
       </aside>
@@ -110,19 +114,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </main>
 
-      {/* Bottom Nav (Mobile) */}
-      <nav className="mobile-nav">
+      {/* Bottom Nav (Mobile Pro) */}
+      <nav className="mobile-nav-pro">
         {navItems.map((item) => (
-          <Link key={item.path} href={item.path} className={`m-link ${pathname === item.path ? 'active' : ''}`}>
-             <span className="icon">{item.icon}</span>
+          <Link key={item.path} href={item.path} className={`m-nav-item ${pathname === item.path ? 'active' : ''}`}>
+             <span className="icon" style={{ fontSize: '24px' }}>{item.icon}</span>
              <span>{item.name}</span>
           </Link>
         ))}
-        {/* Toggle Theme Mobile */}
-        <button onClick={toggleTheme} className="m-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-           <span className="icon">{theme === 'light' ? '🌙' : '☀️'}</span>
-           <span>المظهر</span>
-        </button>
       </nav>
     </div>
   );

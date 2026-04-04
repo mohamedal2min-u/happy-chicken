@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import api from '@/services/api';
 import { 
   HiOutlineCalculator, 
@@ -24,11 +24,7 @@ export default function AccountingPage() {
   
   const printRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
-
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
       const [expResp, salesResp, flockResp] = await Promise.all([
@@ -45,36 +41,45 @@ export default function AccountingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Combine and sort for Ledger
-  const combinedLedger = [
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  // Combine and sort for Ledger - Memoized
+  const combinedLedger = useMemo(() => [
     ...expenses.map(e => ({ ...e, type: 'expense', amountText: `-${e.amount.toLocaleString()}` })),
     ...sales.map(s => ({ ...s, type: 'sale', amountText: `+${(s.total_amount || 0).toLocaleString()}` }))
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [expenses, sales]);
 
-  const totalExpenses = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-  const totalSales = sales.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0);
-  const netBalance = totalSales - totalExpenses;
+  const { totalExpenses, totalSales, netBalance } = useMemo(() => {
+    const expensesSum = expenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+    const salesSum = sales.reduce((sum, s) => sum + (parseFloat(s.total_amount) || 0), 0);
+    return {
+      totalExpenses: expensesSum,
+      totalSales: salesSum,
+      netBalance: salesSum - expensesSum
+    };
+  }, [expenses, sales]);
 
-  // Analysis Logic
-  const getFlockAnalysis = (fId: string) => {
-    const fExpenses = expenses.filter(e => e.flock_id == fId).reduce((s, e) => s + parseFloat(e.amount), 0);
-    const fSales = sales.filter(s => s.flock_id == fId).reduce((s, e) => s + parseFloat(e.total_amount), 0);
-    const flock = flocks.find(f => f.id == fId);
+  // Analysis Logic - Memoized
+  const currentAnalysis = useMemo(() => {
+    if (!selectedFlockId) return null;
+    const fExpenses = expenses.filter(e => e.flock_id == selectedFlockId).reduce((s, e) => s + parseFloat(e.amount), 0);
+    const fSales = sales.filter(s => s.flock_id == selectedFlockId).reduce((s, e) => s + parseFloat(s.total_amount), 0);
+    const flock = flocks.find(f => f.id == selectedFlockId);
     return {
       revenue: fSales,
       costs: fExpenses,
       profit: fSales - fExpenses,
       batch: flock?.batch_number || '---'
     };
-  };
+  }, [selectedFlockId, expenses, sales, flocks]);
 
-  const currentAnalysis = selectedFlockId ? getFlockAnalysis(selectedFlockId) : null;
-
-  const handlePrint = () => {
+  const handlePrint = useCallback(() => {
     window.print();
-  };
+  }, []);
 
   return (
     <div className="accounting-pro-dashboard animate-fade-in">

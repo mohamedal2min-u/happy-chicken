@@ -48,6 +48,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/expenses/page.js"
     ],
+    "/(dashboard)/flocks/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/flocks/[id]/page.js"
+    ],
     "/not-found": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",

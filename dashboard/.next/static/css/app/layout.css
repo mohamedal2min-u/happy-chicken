@@ -110,39 +110,169 @@ body {
 .nav-link:hover { background: rgba(16, 185, 129, 0.05); color: var(--primary); }
 .nav-link.active { background: var(--primary); color: white; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3); }
 
-/* Bottom Nav (Mobile Only) */
-.mobile-nav {
-  display: none;
+/* --- Professional Mobile Navigation --- */
+.mobile-nav-pro {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--bg-card);
+  height: 70px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
-          backdrop-filter: blur(25px);
-  border-top: 1px solid var(--border);
-  padding: 8px 5px;
-  z-index: 1000;
-  justify-content: space-between;
-  box-shadow: 0 -10px 20px rgba(0,0,0,0.08);
-  overflow-x: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  display: none;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 2000;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -5px 25px rgba(0,0,0,0.03);
 }
 
-.m-link {
+@media (max-width: 1024px) {
+  .mobile-nav-pro { display: flex; }
+}
+
+.m-nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  color: var(--text-muted);
+  justify-content: center;
+  color: #64748b;
   text-decoration: none;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
-  flex: 1 1;
-  min-width: 50px;
+  gap: 4px;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 8px 12px;
+  border-radius: 16px;
+  position: relative;
 }
 
-.m-link.active { color: var(--primary); }
-.m-link .icon { font-size: 20px; }
+.m-nav-item svg { font-size: 24px; transition: 0.3s; }
+
+.m-nav-item.active {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08); /* Sophisticated active indicator */
+}
+
+.m-nav-item:active {
+  transform: scale(0.9); /* Native-like haptic feedback simulation */
+}
+
+.m-nav-item.active svg {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 4px 6px rgba(59,130,246,0.3));
+}
+
+/* --- App-like Experience Polish --- */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none; /* Prevents "pull-to-refresh" jitters */
+  scroll-behavior: smooth;
+  font-family: 'Inter', 'Tajawal', system-ui, -apple-system, sans-serif;
+}
+
+/* --- Dark Mode Intelligence --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-main: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border-soft: rgba(255, 255, 255, 0.1);
+  }
+  
+  body { background-color: #0f172a; color: #f8fafc; }
+  
+  .mobile-nav-pro {
+    background: rgba(15, 23, 42, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .m-nav-item { color: #94a3b8; }
+  .m-nav-item.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+  
+  /* Generic card dark conversion */
+  .glass-card, .stat-card, .glass-morph {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #f8fafc !important;
+  }
+  
+  .val { color: #f8fafc !important; }
+  .content label, .sub-val { color: #94a3b8 !important; }
+  
+  .inventory-table th { background: #1e293b; color: #cbd5e1; border-color: #334155; }
+  .inventory-table td { border-color: #334155; }
+  .hover-row:hover { background: #1e293b; }
+  
+  .type-pill { background: #334155; color: #cbd5e1; }
+  .m-name { color: #f1f5f9; }
+  
+  .modal-header-pro, .pro-form, .glass-modal {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+  }
+  
+  .form-input-pro { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+  .close-btn-pro { background: #334155; color: #f1f5f9; }
+}
+
+.fab-theme-toggle {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(15px);
+          backdrop-filter: blur(15px);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 2100;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.06);
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fab-theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.fab-theme-toggle:active {
+  transform: scale(0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  .fab-theme-toggle {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+  }
+}
+
+/* Sidebar Fixes */
+.sidebar-logo { margin-bottom: 30px; padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.icon-wrap { margin-left: 12px; font-size: 20px; }
+.logout-btn { margin-top: auto; border: none; background: transparent; cursor: pointer; color: #ef4444 !important; font-weight: 800; }
+.logout-btn:hover { background: rgba(239, 68, 68, 0.05) !important; }
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* Responsive Adjustments */
 @media (max-width: 900px) {

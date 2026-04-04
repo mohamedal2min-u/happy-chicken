@@ -31,18 +31,17 @@ export default function InventoryPage() {
   const [flocks, setFlocks] = useState<any[]>([]);
   const [activeFlock, setActiveFlock] = useState<any>(null);
 
-  useEffect(() => {
-    fetchInventory();
-  }, []);
-
-  const fetchInventory = async () => {
+  const fetchInventory = React.useCallback(async () => {
     try {
-      const resp = await api.get('/inventory');
+      const [resp, flockResp] = await Promise.all([
+        api.get('/inventory'),
+        api.get('/flocks')
+      ]);
+      
       setItems(resp.data.items || []);
       setSummary(resp.data.summary || { feed: 0, medicine: 0, coal: 0 });
       setTransactions(resp.data.recent_transactions || []);
       
-      const flockResp = await api.get('/flocks');
       const allFlocks = flockResp.data || [];
       setFlocks(allFlocks);
       const active = allFlocks.find((f: any) => !f.is_closed);
@@ -53,7 +52,11 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +110,11 @@ export default function InventoryPage() {
     return `${q.toLocaleString('en-US')} ${unit}`;
   };
 
+  const totalRecentCostMillion = React.useMemo(() => {
+    const total = (transactions || []).reduce((acc, tr) => acc + (tr.total_cost || 0), 0);
+    return (total / 1000000).toFixed(1);
+  }, [transactions]);
+
   return (
     <div className="inventory-pro-dashboard animate-fade-in">
       <div className="pro-bg-pattern"></div>
@@ -159,7 +167,7 @@ export default function InventoryPage() {
           <div className="content">
             <label>تكلفة التوريدات الأخيرة</label>
             <div className="val number-font">
-               {(transactions.reduce((acc, tr) => acc + (tr.total_cost || 0), 0) / 1000000).toFixed(1)} <span>مليون ل.س</span>
+               {totalRecentCostMillion} <span>مليون ل.س</span>
             </div>
             <div className="sub-val">مرصد لآخر 15 شحنة</div>
           </div>
@@ -442,6 +450,48 @@ export default function InventoryPage() {
         .auto-link-notice :global(svg) { font-size: 20px; }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        @media (max-width: 1100px) {
+          .stats-container-modern { grid-template-columns: repeat(2, 1fr) !important; }
+          .inventory-grid-pro { grid-template-columns: 1fr !important; }
+        }
+
+        @media (max-width: 768px) {
+          .inventory-pro-dashboard { padding: 15px; }
+          .pro-bg-pattern { height: 250px; }
+          .section-header-modern { flex-direction: column; align-items: flex-start; gap: 20px; }
+          .title-stack h1 { font-size: 24px; }
+          .action-btns-pro { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+          .btn-primary-pro, .btn-secondary-pro { padding: 10px 15px; font-size: 13px; justify-content: center; }
+          
+          .stats-container-modern { gap: 12px; margin-bottom: 25px; grid-template-columns: 1fr !important; }
+          .stat-card { padding: 15px; border-radius: 20px; gap: 12px; }
+          .icon-box { width: 40px; height: 40px; font-size: 20px; border-radius: 12px; min-width: 40px; }
+          .val { font-size: 20px; }
+          
+          .glass-card { border-radius: 20px; }
+          .card-header-pro { padding: 15px 20px; }
+          .card-header-pro h3 { font-size: 15px; }
+          
+          .table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .inventory-table th, .inventory-table td { padding: 12px 15px; font-size: 12px; }
+          .main-qty { font-size: 16px; }
+          
+          .movement-item { padding: 12px; gap: 10px; border-radius: 16px; }
+          .m-icon { width: 35px; height: 35px; font-size: 16px; border-radius: 10px; }
+          .m-name { font-size: 13px; }
+          .m-details { font-size: 11px; }
+          
+          .glass-modal { border-radius: 24px; }
+          .modal-header-pro, .pro-form { padding: 20px; }
+          .row-pro { flex-direction: column; gap: 0; }
+          .btn-submit-pro { padding: 15px; font-size: 14px; }
+        }
+
+        @media (max-width: 500px) {
+           .action-btns-pro { grid-template-columns: 1fr; }
+           .m-financials { display: none; } /* Hide extra financials on tiny screens */
+        }
       `}</style>
     </div>
   );
