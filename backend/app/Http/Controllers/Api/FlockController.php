@@ -280,6 +280,11 @@ class FlockController extends Controller
         $totalExpenses = $flock->expenses()->sum('amount');
         $netProfit = $totalSales - $totalExpenses;
 
+        $totalShare = DB::table('farm_partner_shares')->where('farm_id', $flock->farm_id)->sum('share_percentage');
+        if (abs($totalShare - 100) > 0.01) {
+            return response()->json(['error' => "مجموع حصص الشركاء ({$totalShare}%) لا يساوي 100%، عدّل الحصص قبل الإغلاق."], 422);
+        }
+
         return DB::transaction(function () use ($flock, $age, $netProfit, $totalSales, $totalExpenses) {
             // 1. تحديث حالة الفوج وتوثيق البيانات النهائية
             $flock->update([
@@ -297,7 +302,7 @@ class FlockController extends Controller
             $distributedCount = 0;
             foreach ($shares as $share) {
                 // نصيب الشريك من صافي الربح أو الخسارة
-                $partnerAmount = ($netProfit * $share->share_percentage) / 100;
+                $partnerAmount = round(($netProfit * $share->share_percentage) / 100, 2);
                 
                 // نوع الحركة: إذا كان ربح -> توزيع (+)، إذا كانت خسارة -> سحب (-)
                 $type = $netProfit >= 0 ? 'profit_distribution' : 'withdrawal';

@@ -45,7 +45,8 @@ class InventoryController extends Controller
         $request->validate([
             'item_id' => 'required|exists:items,id',
             'quantity' => 'required|numeric|min:0.1',
-            'price_per_unit' => 'nullable|numeric',
+            'price_per_unit' => 'nullable|numeric|min:0',
+            'payment_status' => 'nullable|in:paid,debt',
         ]);
 
         $item = Item::findOrFail($request->item_id);
@@ -103,7 +104,7 @@ class InventoryController extends Controller
                 'type' => 'in',
                 'price_per_unit' => $price,
                 'total_cost' => $price * $request->quantity,
-                'payment_status' => $price > 0 ? 'paid' : 'debt',
+                'payment_status' => $request->payment_status ?? 'paid',
                 'invoice_path' => $invoicePath,
                 'created_by' => Auth::id(),
             ]);

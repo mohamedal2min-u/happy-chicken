@@ -8,7 +8,7 @@ class Sale extends Model
 {
     use BelongsToFarm;
 
-    protected $fillable = ['farm_id', 'flock_id', 'customer_name', 'total_amount', 'paid_amount', 'date', 'status', 'created_by'];
+    protected $fillable = ['farm_id', 'flock_id', 'customer_name', 'total_amount', 'paid_amount', 'date', 'status', 'invoice_image', 'created_by'];
 
     public function items()
     {

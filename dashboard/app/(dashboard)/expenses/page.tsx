@@ -66,8 +66,8 @@ export default function AccountingPage() {
   // Analysis Logic - Memoized
   const currentAnalysis = useMemo(() => {
     if (!selectedFlockId) return null;
-    const fExpenses = expenses.filter(e => e.flock_id == selectedFlockId).reduce((s, e) => s + parseFloat(e.amount), 0);
-    const fSales = sales.filter(s => s.flock_id == selectedFlockId).reduce((s, e) => s + parseFloat(s.total_amount), 0);
+    const fExpenses = expenses.filter(e => e.flock_id == selectedFlockId).reduce((sum, x) => sum + (parseFloat(x.amount) || 0), 0);
+    const fSales = sales.filter(s => s.flock_id == selectedFlockId).reduce((sum, x) => sum + (parseFloat(x.total_amount) || 0), 0);
     const flock = flocks.find(f => f.id == selectedFlockId);
     return {
       revenue: fSales,

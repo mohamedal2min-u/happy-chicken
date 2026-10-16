@@ -133,6 +133,12 @@ class PartnerController extends Controller
 
         return DB::transaction(function () use ($request) {
             $farmId = FarmContext::getFarmId();
+
+            $belongs = DB::table('farm_partner_shares')
+                ->where('farm_id', $farmId)->where('partner_id', $request->partner_id)->exists();
+            if (!$belongs) {
+                return response()->json(['error' => 'الشريك لا يتبع هذه المدجنة.'], 403);
+            }
             
             // تحقق من الرصيد في حال كان السحب يدوياً
             if ($request->type === 'withdrawal') {
@@ -170,6 +176,12 @@ class PartnerController extends Controller
 
     public function transactions($partnerId)
     {
+        $belongs = DB::table('farm_partner_shares')
+            ->where('farm_id', FarmContext::getFarmId())->where('partner_id', $partnerId)->exists();
+        if (!$belongs) {
+            return response()->json(['error' => 'غير مصرح'], 403);
+        }
+
         return PartnerTransaction::where('partner_id', $partnerId)
             ->where('farm_id', \App\Models\FarmContext::getFarmId())
             ->latest()
@@ -200,7 +212,7 @@ class PartnerController extends Controller
         return DB::transaction(function () use ($request, $shares, $farm_id) {
             $totalDistributed = 0;
             foreach ($shares as $share) {
-                $partner_amount = ($request->total_amount * $share->share_percentage) / 100;
+                $partner_amount = round(($request->total_amount * $share->share_percentage) / 100, 2);
                 $totalDistributed += $partner_amount;
 
                 PartnerTransaction::create([

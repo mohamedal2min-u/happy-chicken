@@ -41,6 +41,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::delete('expenses/{expense}', [AccountingController::class, 'destroyExpense']);
             Route::get('sales', [AccountingController::class, 'getSales']);
             Route::post('sales', [AccountingController::class, 'storeSale']);
+            Route::post('sales/{sale}/pay', [AccountingController::class, 'paySale']);
             Route::delete('sales/{sale}', [AccountingController::class, 'destroySale']);
         });
 
