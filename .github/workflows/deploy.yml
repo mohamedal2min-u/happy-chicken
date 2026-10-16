@@ -17,6 +17,7 @@ jobs:
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME_BACKEND }}
+          key: ${{ secrets.VPS_SSH_KEY_BACKEND }}
           password: ${{ secrets.VPS_PASSWORD_BACKEND }}
           port: 22
           timeout: 60s
