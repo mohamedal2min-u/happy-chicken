@@ -14,7 +14,12 @@ class Flock extends Model
     protected $fillable = [
         'farm_id', 'batch_number', 'start_count', 'current_count', 
         'age_days', 'cost_per_kg', 'status', 'notes', 
+        'start_date', 'end_date', 'is_historical', 'chick_price',
         'created_by', 'updated_by'
+    ];
+
+    protected $casts = [
+        'is_historical' => 'boolean',
     ];
 
     /**

@@ -49,7 +49,7 @@ export default function FlocksPage() {
       setNewFlock({ batch_number: '', start_count: '', chick_price: '', notes: '' });
       fetchFlocks();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'حدث خطأ أثناء إنشاء الفوج. يرجى مراجعة البيانات.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'حدث خطأ أثناء إنشاء الفوج. يرجى مراجعة البيانات.');
     } finally {
       setSubmitting(false);
     }
@@ -62,10 +62,16 @@ export default function FlocksPage() {
             <h1>سجل متابعة الأفواج</h1>
             <p>مراقبة شاملة لأداء الدورات الإنتاجية الحالية والأرشيفية.</p>
          </div>
-         <button className="add-flock-btn" onClick={() => setShowModal(true)}>
-            <span className="icon">＋</span>
-            إضافة فوج جديد
-         </button>
+         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <Link href="/flocks/historical" className="add-flock-btn" style={{ background: '#475569', textDecoration: 'none' }}>
+               <span className="icon">🗂</span>
+               إدخال فوج سابق
+            </Link>
+            <button className="add-flock-btn" onClick={() => setShowModal(true)}>
+               <span className="icon">＋</span>
+               إضافة فوج جديد
+            </button>
+         </div>
       </header>
 
       {showModal && (
@@ -103,10 +109,10 @@ export default function FlocksPage() {
               </div>
 
               <div className="form-group">
-                <label>سعر الصوص (للرأس الواحد بالليرة)</label>
+                <label>سعر الصوص (للرأس الواحد بالدولار $)</label>
                 <input 
                   type="number" 
-                  step="0.01"
+                  step="0.001"
                   value={newFlock.chick_price}
                   onChange={(e) => setNewFlock({...newFlock, chick_price: e.target.value})}
                   placeholder="مثال: 0.85"
@@ -150,7 +156,7 @@ export default function FlocksPage() {
 
                <div className="info-section">
                   <span className="label">تاريخ البداية</span>
-                  <div className="val number-font">{f.created_at?.split('T')[0]}</div>
+                  <div className="val number-font">{f.start_date?.split('T')[0] || f.created_at?.split('T')[0]}</div>
                </div>
 
                <div className="info-section">
@@ -166,7 +172,7 @@ export default function FlocksPage() {
                <div className="status-section">
                   <span className="label">الحالة التشغيلية</span>
                   <div className={`status-pill ${f.status === 'open' ? 'active' : 'closed'}`}>
-                     {f.status === 'open' ? 'نشط الآن' : 'مكتمل / مبيع'}
+                     {f.status === 'open' ? 'نشط الآن' : f.is_historical ? 'فوج سابق' : 'مكتمل / مبيع'}
                   </div>
                </div>
 
