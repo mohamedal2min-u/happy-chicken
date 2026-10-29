@@ -23,6 +23,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware(['check.farm'])->group(function () {
         
         // إدارة الأفواج
+        Route::post('flocks/historical', [FlockController::class, 'storeHistorical']);
         Route::apiResource('flocks', FlockController::class);
 
         // سجلات تشغيلية سريعة للفوج
@@ -32,6 +33,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             Route::post('medicine', [FlockController::class, 'addMedicine']);
             Route::post('water', [FlockController::class, 'addWater']);
             Route::post('notes', [FlockController::class, 'addNote']);
+            Route::post('close', [FlockController::class, 'close']);
         });
 
         // 4. الحسابات والمحاسبة

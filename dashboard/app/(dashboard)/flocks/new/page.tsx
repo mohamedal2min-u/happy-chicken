@@ -100,13 +100,13 @@ export default function CreateFlockPage() {
                   />
                 </div>
                 <div className="input-group">
-                  <label>سعر الصوص الواحد (ل.س)</label>
+                  <label>سعر الصوص الواحد ($)</label>
                   <input 
                     type="number" 
-                    step="0.01"
+                    step="0.001"
                     value={formData.chick_price}
                     onChange={(e) => setFormData({...formData, chick_price: e.target.value})}
-                    placeholder="مثال: 12000"
+                    placeholder="مثال: 2.105"
                     required
                   />
                 </div>
