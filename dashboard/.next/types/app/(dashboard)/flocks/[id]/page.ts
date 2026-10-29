@@ -1,4 +1,4 @@
-// File: /home/claude/happy-chicken/dashboard/app/(dashboard)/flocks/[id]/page.tsx
+// File: C:\Users\moham\Desktop\MAA\dashboard\app\(dashboard)\flocks\[id]\page.tsx
 import * as entry from '../../../../../../app/(dashboard)/flocks/[id]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
