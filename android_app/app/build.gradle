@@ -1,0 +1,37 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'se.alamin.ch'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'se.alamin.ch'
+        minSdk 24
+        targetSdk 35
+        versionCode 104
+        versionName '1.4'
+    }
+
+    signingConfigs {
+        release {
+            // Upload key is never committed. Pass it via env vars at build time.
+            if (System.getenv('KEYSTORE_PATH')) {
+                storeFile file(System.getenv('KEYSTORE_PATH'))
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
