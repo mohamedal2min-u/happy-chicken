@@ -2,13 +2,13 @@ plugins { id 'com.android.application' }
 
 android {
     namespace 'se.alamin.ch'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'se.alamin.ch'
         minSdk 24
-        targetSdk 35
-        versionCode 104
+        targetSdk 36
+        versionCode 105
         versionName '1.4'
     }
 
